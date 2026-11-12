@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resident Onboarding Guide</title>
+  <!-- Supabase JS v2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #10b981;
+      --accent-glow: rgba(16, 185, 129, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: #020617;
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding-bottom: 40px;
+    }
+
+    /* Demo Switcher Bar (Auto-hides when accessed via a direct ?unit= QR link) */
+    .demo-switcher {
+      width: 100%;
+      max-width: 480px;
+      background: #1e1b4b;
+      border-bottom: 1px solid #4338ca;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #e0e7ff;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .status-pill {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 99px;
+      background: #312e81;
+      border: 1px solid #6366f1;
+      white-space: nowrap;
+    }
+
+    .demo-switcher select {
+      background: #312e81;
+      color: #fff;
+      border: 1px solid #6366f1;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      max-width: 260px;
+    }
+
+    /* Mobile App Shell */
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background-color: var(--bg-dark);
+      min-height: 100vh;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+      overflow: hidden;
+    }
+
+    /* Property Hero Banner */
+    .hero-banner {
+      position: relative;
+      height: 230px;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 20px;
+    }
+
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, var(--bg-dark) 8%, rgba(15, 23, 42, 0.35) 100%);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .pmc-badge {
+      display: inline-block;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+      backdrop-filter: blur(4px);
+    }
+
+    .property-title {
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 4px;
+    }
+
+    .unit-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent);
+      color: #020617;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 4px 12px;
+      border-radius: 6px;
+      margin-top: 6px;
+    }
+
+    .content-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    .section-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .welcome-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #cbd5e1;
+    }
+
+    .packet-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .packet-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      padding: 12px 14px;
+      border-radius: 10px;
+      text-decoration: none;
+      color: var(--text-main);
+      transition: border-color 0.2s;
+    }
+
+    .packet-item:hover {
+      border-color: var(--accent);
+    }
+
+    .packet-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .packet-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .packet-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .packet-btn {
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .wifi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .data-box {
+      background: rgba(15, 23, 42, 0.6);
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+    }
+
+    .data-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .data-value {
+      font-size: 14px;
+      font-weight: 700;
+      font-family: monospace;
+      word-break: break-all;
+    }
+
+    .action-btn {
+      width: 100%;
+      background: var(--accent);
+      color: #020617;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .checklist-item:last-child {
+      border-bottom: none;
+    }
+
+    .checklist-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .checklist-label input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .utility-link {
+      font-size: 12px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    details {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      padding: 12px;
+    }
+
+    summary {
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    summary::after {
+      content: "+";
+      color: var(--accent);
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    details[open] summary::after {
+      content: "−";
+    }
+
+    .rule-body {
+      margin-top: 10px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #cbd5e1;
+      padding-top: 8px;
+      border-top: 1px solid var(--card-border);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR: Auto-hidden when tenant scans a specific ?unit= QR link -->
+  <div class="demo-switcher" id="demoBar">
+    <span class="status-pill" id="connectionBadge">Checking Cloud...</span>
+    <select id="unitSelector"></select>
+  </div>
+
+  <!-- MAIN MOBILE WEB APP CONTAINER -->
+  <div class="app-container">
+    <property-guide id="guideApp"></property-guide>
+  </div>
+
+  <script>
+    // =========================================================================
+    // PASTE YOUR TWO SUPABASE KEYS HERE (From Project Settings -> API)
+    // =========================================================================
+    const SUPABASE_URL = "https://csiwbnosdxnwpdlqydkl.supabase.co/rest/v1/";
+    const SUPABASE_ANON_KEY = "sb_publishable_g6EY_Po3DPPMgnHsO0gdmg_hdMmw1y3";
+
+    const isCloudConfigured =
+      SUPABASE_URL.startsWith("https://") &&
+      !SUPABASE_URL.includes("YOUR_SUPABASE") &&
+      SUPABASE_ANON_KEY.length > 20;
+
+    const supabaseClient = isCloudConfigured
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    // Fallback Mock Data if opened offline before Supabase keys are pasted
+    const FALLBACK_PORTFOLIO = {
+      company_name: "Summit Peak Property Management",
+      properties: {
+        cahill: {
+          property_name: "Cahill Pond Apartments",
+          accent_color: "#10b981",
+          hero_image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=900&q=80",
+          welcome_message: "Welcome to Cahill Pond! Enjoy our quiet pondside trails, community garden plots, and renovated clubhouse. Below you'll find your unit access details and downloadable Cahill Pond welcome packet.",
+          onboarding_packets: [
+            { title: "Cahill Pond Welcome Packet & Trail Map.pdf", meta: "PDF • 2.4 MB", url: "#" },
+            { title: "Clubhouse & Pond Amenity Rules.pdf", meta: "PDF • 850 KB", url: "#" }
+          ],
+          utilities: [
+            { name: "Set up Colorado Springs Utilities (Electric/Water)", url: "https://www.csu.org" },
+            { name: "Upload Renter's Insurance Certificate", url: "#insurance" },
+            { name: "Register Vehicle for Cahill Surface Lot Pass", url: "#parking" }
+          ],
+          rules: [
+            { title: "Trash & Valet Recycling Schedule", content: "Dumpsters are at the West enclosure. Valet pickup runs Tuesday & Friday at 8:00 AM." },
+            { title: "Pet Policy & Bark Park Hours", content: "Up to 2 pets permitted. The fenced Cahill Bark Park is open dawn to dusk." },
+            { title: "24/7 Emergency Maintenance", content: "For active leaks or heating emergencies, call Summit Peak Dispatch at (719) 555-0192." }
+          ],
+          units: [
+            { unit_number: "Unit 8", slug_token: "cahill-8-x9f2", wifi_ssid: "CahillPond_Unit8_5G", wifi_pass: "PondLife2026!", access_info: "Mailbox #8 (North Kiosk) • Gate Code: #4491" },
+            { unit_number: "Unit 12", slug_token: "cahill-12-k3m9", wifi_ssid: "CahillPond_Unit12_5G", wifi_pass: "TrailView12#", access_info: "Mailbox #12 (North Kiosk) • Gate Code: #4491" }
+          ]
+        },
+        foundry: {
+          property_name: "The Foundry Urban Lofts",
+          accent_color: "#f59e0b",
+          hero_image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=900&q=80",
+          welcome_message: "Welcome to The Foundry Urban Lofts downtown. Your loft is equipped with gigabit fiber and smart keyfob entry. Review your freight elevator reservation packet and garage instructions below.",
+          onboarding_packets: [
+            { title: "Foundry Lofts Resident Handbook.pdf", meta: "PDF • 3.1 MB", url: "#" },
+            { title: "Freight Elevator & Move-In Dock Rules.pdf", meta: "PDF • 1.1 MB", url: "#" }
+          ],
+          utilities: [
+            { name: "Activate Symmetrical Gigabit Fiber Port", url: "#fiber" },
+            { name: "Register Smartphone NFC Building Keyfob", url: "#nfc" }
+          ],
+          rules: [
+            { title: "Trash Chute & P1 Cardboard Room", content: "Chutes are on every floor. Flatten moving boxes and leave them in the P1 Recycling Room." },
+            { title: "Rooftop Sky Deck Reservations", content: "Open until 11:00 PM nightly. Gas fire pits can be reserved in the resident portal." }
+          ],
+          units: [
+            { unit_number: "Loft 402", slug_token: "foundry-402-z7p1", wifi_ssid: "FoundryFiber_Loft402", wifi_pass: "IronWorks402#", access_info: "Parcel Locker #402 (Lobby) • Elevator PIN: 8820#" }
+          ]
+        }
+      }
+    };
+
+    // WEB COMPONENT FOR TENANT GUIDE
+    class PropertyGuide extends HTMLElement {
+      set data(d) {
+        this._data = d;
+        this.render();
+      }
+
+      render() {
+        const d = this._data;
+        if (!d) return;
+
+        document.documentElement.style.setProperty('--accent', d.accent_color || '#10b981');
+        document.documentElement.style.setProperty('--accent-glow', (d.accent_color || '#10b981') + '33');
+
+        this.innerHTML = `
+          <div class="hero-banner" style="background-image: url('${d.hero_image}')">
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+              <span class="pmc-badge">Managed by ${d.company_name}</span>
+              <h1 class="property-title">${d.property_name}</h1>
+              <div class="unit-pill">Welcome to ${d.unit_number}</div>
+            </div>
+          </div>
+
+          <div class="content-body">
+            <div class="card">
+              <div class="section-title">Community Welcome</div>
+              <p class="welcome-text">${d.welcome_message}</p>
+            </div>
+
+            <div class="card">
+              <div class="section-title">
+                <span>Property Onboarding Packet</span>
+                <span>${(d.onboarding_packets || []).length} Docs</span>
+              </div>
+              <div class="packet-list">
+                ${(d.onboarding_packets || []).map(pkt => `
+                  <a href="${pkt.url}" target="_blank" class="packet-item" onclick="if(this.getAttribute('href')==='#'){event.preventDefault(); alert('Document preview: ${pkt.title}');}">
+                    <div class="packet-info">
+                      <span class="packet-name">${pkt.title}</span>
+                      <span class="packet-meta">${pkt.meta || pkt.type || 'PDF Document'}</span>
+                    </div>
+                    <span class="packet-btn">Open PDF</span>
+                  </a>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="section-title">Unit Connectivity & Access</div>
+              <div class="wifi-grid">
+                <div class="data-box">
+                  <div class="data-label">Wi-Fi Network</div>
+                  <div class="data-value">${d.wifi_ssid}</div>
+                </div>
+                <div class="data-box">
+                  <div class="data-label">Password</div>
+                  <div class="data-value">${d.wifi_pass}</div>
+                </div>
+              </div>
+              <div class="data-box" style="margin-bottom: 12px;">
+                <div class="data-label">Mailbox & Entry Codes</div>
+                <div class="data-value" style="font-size: 13px; font-family: sans-serif;">${d.access_info}</div>
+              </div>
+              <button class="action-btn" id="copyWifiBtn">Copy Unit Wi-Fi Password</button>
+            </div>
+
+            <div class="card">
+              <div class="section-title">Move-In Action Checklist</div>
+              <div>
+                ${(d.utilities || []).map((u, idx) => {
+                  const storageKey = `chk_${d.slug_token}_${idx}`;
+                  const isChecked = localStorage.getItem(storageKey) === 'true' ? 'checked' : '';
+                  return `
+                    <div class="checklist-item">
+                      <label class="checklist-label">
+                        <input type="checkbox" data-key="${storageKey}" ${isChecked} />
+                        <span>${u.name}</span>
+                      </label>
+                      <a href="${u.url}" target="_blank" class="utility-link">Open &rarr;</a>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="section-title">Community Policies & Contacts</div>
+              ${(d.rules || []).map(r => `
+                <details>
+                  <summary>${r.title}</summary>
+                  <div class="rule-body">${r.content}</div>
+                </details>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="footer">
+            ${d.company_name} • Digital Resident Guide
+          </div>
+        `;
+
+        const copyBtn = this.querySelector('#copyWifiBtn');
+        copyBtn.addEventListener('click', () => {
+          navigator.clipboard.writeText(d.wifi_pass);
+          copyBtn.textContent = "✓ Copied: " + d.wifi_pass;
+          setTimeout(() => {
+            copyBtn.textContent = "Copy Unit Wi-Fi Password";
+          }, 2200);
+        });
+
+        this.querySelectorAll('input[type="checkbox"]').forEach(box => {
+          box.addEventListener('change', (e) => {
+            localStorage.setItem(e.target.dataset.key, e.target.checked);
+          });
+        });
+      }
+    }
+
+    customElements.define('property-guide', PropertyGuide);
+
+    const guideApp = document.getElementById('guideApp');
+    const unitSelector = document.getElementById('unitSelector');
+    const badge = document.getElementById('connectionBadge');
+    let flatUnitsList = [];
+
+    // Flatten properties + units into combined tenant view objects
+    function buildFlatUnitListFromLocal(stateObj) {
+      const list = [];
+      Object.values(stateObj.properties).forEach(prop => {
+        prop.units.forEach(u => {
+          list.push({
+            company_name: stateObj.company_name,
+            property_name: prop.property_name,
+            accent_color: prop.accent_color,
+            hero_image: prop.hero_image,
+            welcome_message: prop.welcome_message,
+            onboarding_packets: prop.onboarding_packets,
+            utilities: prop.utilities,
+            rules: prop.rules,
+            unit_number: u.unit_number,
+            slug_token: u.slug_token,
+            wifi_ssid: u.wifi_ssid,
+            wifi_pass: u.wifi_pass,
+            access_info: u.access_info
+          });
+        });
+      });
+      return list;
+    }
+
+    async function initTenantGuide() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const requestedSlug = urlParams.get('unit');
+
+      // Hide top demo switcher if a tenant scanned a direct ?unit= QR code
+      if (requestedSlug) {
+        document.getElementById('demoBar').style.display = 'none';
+      }
+
+      if (supabaseClient) {
+        badge.textContent = "☁️ Supabase Cloud Live";
+        badge.style.background = "#065f46";
+        badge.style.borderColor = "#10b981";
+
+        // Query units joined with parent properties and company
+        const { data: unitsData, error } = await supabaseClient
+          .from('units')
+          .select(`
+            unit_number,
+            slug_token,
+            wifi_ssid,
+            wifi_pass,
+            access_info,
+            properties (
+              property_name,
+              accent_color,
+              hero_image,
+              welcome_message,
+              onboarding_packets,
+              utilities,
+              rules,
+              companies ( company_name )
+            )
+          `);
+
+        if (!error && unitsData && unitsData.length > 0) {
+          flatUnitsList = unitsData.map(u => ({
+            company_name: u.properties?.companies?.company_name || "Property Management",
+            property_name: u.properties?.property_name || "",
+            accent_color: u.properties?.accent_color || "#10b981",
+            hero_image: u.properties?.hero_image || "",
+            welcome_message: u.properties?.welcome_message || "",
+            onboarding_packets: u.properties?.onboarding_packets || [],
+            utilities: u.properties?.utilities || [],
+            rules: u.properties?.rules || [],
+            unit_number: u.unit_number,
+            slug_token: u.slug_token,
+            wifi_ssid: u.wifi_ssid,
+            wifi_pass: u.wifi_pass,
+            access_info: u.access_info
+          }));
+        }
+      }
+
+      // Fallback to localStorage (synced from admin.html) or default mock data
+      if (flatUnitsList.length === 0) {
+        badge.textContent = "⚡ Local Browser Sync";
+        const savedLocal = localStorage.getItem('pmc_portfolio_state');
+        const stateToUse = savedLocal ? JSON.parse(savedLocal) : FALLBACK_PORTFOLIO;
+        flatUnitsList = buildFlatUnitListFromLocal(stateToUse);
+      }
+
+      // Populate selector
+      unitSelector.innerHTML = flatUnitsList.map(item =>
+        `<option value="${item.slug_token}">${item.property_name} — ${item.unit_number}</option>`
+      ).join('');
+
+      // Pick requested unit from URL ?unit=slug, or default to first unit
+      const initialUnit = flatUnitsList.find(u => u.slug_token === requestedSlug) || flatUnitsList[0];
+      if (initialUnit) {
+        unitSelector.value = initialUnit.slug_token;
+        guideApp.data = initialUnit;
+      }
+
+      unitSelector.addEventListener('change', (e) => {
+        const picked = flatUnitsList.find(u => u.slug_token === e.target.value);
+        if (picked) guideApp.data = picked;
+      });
+    }
+
+    initTenantGuide();
+  </script>
+</body>
+</html>

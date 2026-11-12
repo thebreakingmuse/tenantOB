@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PMC Onboarding Command Center — Cloud Admin</title>
+  <!-- Supabase JS v2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- QR Code Generator -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg-workspace: #090d16;
+      --panel-bg: #111827;
+      --card-bg: #1e293b;
+      --border-subtle: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --brand-accent: #10b981;
+      --brand-glow: rgba(16, 185, 129, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-workspace);
+      color: var(--text-primary);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .topbar {
+      height: 64px;
+      background: #0f172a;
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pmc-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .pmc-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--brand-accent);
+      box-shadow: 0 0 10px var(--brand-accent);
+    }
+
+    .cloud-status {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-weight: 700;
+      background: #1e1b4b;
+      color: #a5b4fc;
+      border: 1px solid #4338ca;
+    }
+
+    .divider-v {
+      width: 1px;
+      height: 24px;
+      background: var(--border-subtle);
+    }
+
+    .selector-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    select, input[type="text"], textarea {
+      background: #090d16;
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    select:focus, input[type="text"]:focus, textarea:focus {
+      border-color: var(--brand-accent);
+      box-shadow: 0 0 0 2px var(--brand-glow);
+    }
+
+    .btn {
+      background: #1e293b;
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+
+    .btn:hover {
+      border-color: var(--brand-accent);
+      background: #26354d;
+    }
+
+    .btn-primary {
+      background: var(--brand-accent);
+      color: #020617;
+      border-color: var(--brand-accent);
+      font-weight: 700;
+    }
+
+    .btn-save {
+      background: #4f46e5;
+      color: #ffffff;
+      border-color: #6366f1;
+      font-weight: 700;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr 470px;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .editor-pane {
+      padding: 22px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      border-right: 1px solid var(--border-subtle);
+    }
+
+    .editor-section {
+      background: var(--panel-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 0 18px rgba(0, 0, 0, 0.35), 0 0 1px var(--brand-glow);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .section-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      color: var(--brand-accent);
+    }
+
+    .tier-badge {
+      font-size: 10px;
+      background: rgba(99, 102, 241, 0.15);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      padding: 3px 8px;
+      border-radius: 99px;
+      font-weight: 600;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .form-group.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 66px;
+      line-height: 1.4;
+    }
+
+    .color-upload-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    input[type="color"] {
+      width: 42px;
+      height: 34px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      background: #090d16;
+      cursor: pointer;
+    }
+
+    .file-drop-btn {
+      position: relative;
+      overflow: hidden;
+      display: inline-flex;
+    }
+
+    .file-drop-btn input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .item-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .editor-list-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #090d16;
+      border: 1px solid var(--border-subtle);
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    .row-meta {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-left: 8px;
+    }
+
+    .delete-btn {
+      background: transparent;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 8px;
+    }
+
+    .inline-add-bar {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .inline-add-bar input {
+      flex: 1;
+    }
+
+    /* RIGHT PANE: LIVE PHONE SIMULATOR */
+    .preview-pane {
+      background: #050811;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 18px;
+      overflow-y: auto;
+    }
+
+    .preview-toolbar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .slug-link {
+      font-family: monospace;
+      background: #111827;
+      border: 1px solid var(--border-subtle);
+      padding: 4px 10px;
+      border-radius: 6px;
+      color: var(--brand-accent);
+      font-size: 11px;
+      text-decoration: none;
+    }
+
+    .phone-frame {
+      width: 390px;
+      background: #0f172a;
+      border: 8px solid #1e293b;
+      border-radius: 36px;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 25px var(--brand-glow);
+      flex-shrink: 0;
+    }
+
+    .hero-banner {
+      position: relative;
+      height: 195px;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 18px;
+    }
+
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, #0f172a 8%, rgba(15, 23, 42, 0.3) 100%);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .pmc-badge {
+      display: inline-block;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 3px 9px;
+      border-radius: 999px;
+      margin-bottom: 6px;
+    }
+
+    .property-title {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .unit-pill {
+      display: inline-block;
+      background: var(--brand-accent);
+      color: #020617;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 6px;
+      margin-top: 6px;
+    }
+
+    .mobile-body {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .m-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .m-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--brand-accent);
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .m-welcome {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #cbd5e1;
+    }
+
+    .m-packet {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid #334155;
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .m-packet-tag {
+      font-size: 11px;
+      color: var(--brand-accent);
+      border: 1px solid var(--brand-accent);
+      background: var(--brand-glow);
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .m-wifi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .m-box {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid #334155;
+      padding: 8px 10px;
+      border-radius: 6px;
+    }
+
+    .m-label {
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    .m-val {
+      font-size: 12px;
+      font-weight: 700;
+      font-family: monospace;
+      margin-top: 2px;
+      word-break: break-all;
+    }
+
+    .m-btn {
+      width: 100%;
+      background: var(--brand-accent);
+      color: #020617;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+
+    .m-check-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #334155;
+      font-size: 12px;
+    }
+
+    details.m-rule {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    /* PRINTABLE TENT CARD MODAL */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.85);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 20px;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .tent-card-sheet {
+      background: #ffffff;
+      color: #0f172a;
+      width: 440px;
+      border-radius: 16px;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .tent-hero {
+      height: 120px;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 14px;
+    }
+
+    .tent-hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.3));
+    }
+
+    .tent-hero-text {
+      position: relative;
+      z-index: 2;
+      color: #fff;
+    }
+
+    .tent-body {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    #qrcodeBox {
+      padding: 14px;
+      background: #fff;
+      border: 3px solid var(--brand-accent);
+      border-radius: 12px;
+      display: inline-block;
+    }
+
+    .tent-wifi-box {
+      width: 100%;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+    }
+
+    @media print {
+      body * { visibility: hidden; }
+      #qrModal, #qrModal * { visibility: visible; }
+      #qrModal { position: absolute; inset: 0; background: #fff; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="pmc-brand">
+        <span class="pmc-dot"></span>
+        <span id="pmcNameDisplay">Summit Peak Property Management</span>
+      </div>
+      <span class="cloud-status" id="cloudStatusBadge">Connecting...</span>
+      <div class="divider-v"></div>
+
+      <div class="selector-group">
+        <span>Property:</span>
+        <select id="propertySelect"></select>
+        <button class="btn" id="addPropertyBtn">+ Property</button>
+      </div>
+
+      <div class="divider-v"></div>
+
+      <div class="selector-group">
+        <span>Unit:</span>
+        <select id="unitSelect"></select>
+        <button class="btn" id="addUnitBtn">+ Unit</button>
+      </div>
+    </div>
+
+    <div class="topbar-left">
+      <button class="btn" id="bulkCsvBtn">Import CSV</button>
+      <button class="btn btn-save" id="saveCloudBtn">💾 Save Changes</button>
+      <button class="btn btn-primary" id="openQrModalBtn">Print QR Tent Card</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="editor-pane">
+
+      <!-- SECTION 1: PROPERTY IDENTITY -->
+      <div class="editor-section">
+        <div class="section-header">
+          <span class="section-title">1. Property Branding & Hero Experience</span>
+          <span class="tier-badge">Tier 2 • Property-Wide</span>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Property / Community Title</label>
+            <input type="text" id="propNameInput" />
+          </div>
+
+          <div class="form-group">
+            <label>Brand Accent Color</label>
+            <div class="color-upload-row">
+              <input type="color" id="propColorInput" />
+              <span id="colorHexLabel" style="font-family: monospace; font-size: 12px; color: var(--text-secondary);"></span>
+            </div>
+          </div>
+
+          <div class="form-group full">
+            <label>Hero Banner Photo (Paste URL or Upload to Supabase Storage)</label>
+            <div class="color-upload-row">
+              <input type="text" id="propHeroUrlInput" style="flex: 1;" />
+              <label class="btn file-drop-btn">
+                <span id="heroUploadBtnText">Upload Photo</span>
+                <input type="file" id="propHeroFileInput" accept="image/*" />
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group full">
+            <label>Custom Property Welcome Note</label>
+            <textarea id="propWelcomeInput"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: ONBOARDING PACKET PDFS -->
+      <div class="editor-section">
+        <div class="section-header">
+          <span class="section-title">2. Property Onboarding Packet Documents (PDFs & Rules)</span>
+          <span class="tier-badge">Tier 2 • Cloud Bucket Storage</span>
+        </div>
+
+        <div class="item-list" id="packetListEditor"></div>
+
+        <div class="inline-add-bar">
+          <input type="text" id="newPacketTitle" placeholder="Custom Document Title (optional)" />
+          <label class="btn btn-primary file-drop-btn">
+            <span id="pdfUploadBtnText">+ Upload PDF / Doc</span>
+            <input type="file" id="newPacketFile" accept=".pdf,.doc,.docx,.png,.jpg" />
+          </label>
+        </div>
+      </div>
+
+      <!-- SECTION 3: UNIT-LEVEL WIFI & ACCESS -->
+      <div class="editor-section">
+        <div class="section-header">
+          <span class="section-title">3. Individual Unit Credentials & Access</span>
+          <span class="tier-badge" id="activeUnitBadge">Tier 3 • Unit Override</span>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Unit Number</label>
+            <input type="text" id="unitNumberInput" />
+          </div>
+          <div class="form-group">
+            <label>Unique QR Slug Token</label>
+            <input type="text" id="unitSlugInput" />
+          </div>
+          <div class="form-group">
+            <label>Unit Wi-Fi SSID</label>
+            <input type="text" id="unitWifiSsidInput" />
+          </div>
+          <div class="form-group">
+            <label>Unit Wi-Fi Password</label>
+            <input type="text" id="unitWifiPassInput" />
+          </div>
+          <div class="form-group full">
+            <label>Mailbox, Smart Lock & Gate Instructions</label>
+            <input type="text" id="unitAccessInput" />
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 4: UTILITIES & ACCORDION RULES -->
+      <div class="editor-section">
+        <div class="section-header">
+          <span class="section-title">4. Move-In Utility Links & Community Policies</span>
+          <span class="tier-badge">Tier 2 • Property-Wide</span>
+        </div>
+
+        <label style="display:block; margin-bottom: 6px;">Required Move-In Checklist Items</label>
+        <div class="item-list" id="utilityListEditor"></div>
+        <div class="inline-add-bar" style="margin-bottom: 16px;">
+          <input type="text" id="newUtilName" placeholder="Checklist Task" />
+          <input type="text" id="newUtilUrl" placeholder="https://..." />
+          <button class="btn" id="addUtilBtn">+ Add</button>
+        </div>
+
+        <label style="display:block; margin-bottom: 6px;">Community Rules & Emergency Accordion Cards</label>
+        <div class="item-list" id="rulesListEditor"></div>
+        <div class="inline-add-bar">
+          <input type="text" id="newRuleTitle" placeholder="Policy Title" />
+          <input type="text" id="newRuleBody" placeholder="Policy details..." style="flex: 2;" />
+          <button class="btn" id="addRuleBtn">+ Add</button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT PANE: LIVE MOBILE PREVIEW -->
+    <aside class="preview-pane">
+      <div class="preview-toolbar">
+        <span>LIVE TENANT PREVIEW</span>
+        <a href="guide.html" target="_blank" class="slug-link" id="liveUrlPreview" title="Click to open tenant view in new tab">guide.html?unit=cahill-8-x9f2 ↗</a>
+      </div>
+
+      <div class="phone-frame" id="mobilePreviewFrame"></div>
+    </aside>
+  </main>
+
+  <!-- PRINTABLE QR WELCOME TENT CARD MODAL -->
+  <div class="modal-backdrop" id="qrModal">
+    <div class="tent-card-sheet">
+      <div class="tent-hero" id="tentHeroBanner">
+        <div class="tent-hero-overlay"></div>
+        <div class="tent-hero-text">
+          <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.85;" id="tentPmcName"></div>
+          <h2 style="font-size: 22px; font-weight: 800; margin-top: 2px;" id="tentPropName"></h2>
+          <div style="font-size: 14px; font-weight: 700; margin-top: 4px;" id="tentUnitName"></div>
+        </div>
+      </div>
+      <div class="tent-body">
+        <p style="font-size: 13px; color: #475569; max-width: 320px;">
+          Scan with your smartphone camera to open your custom digital welcome packet, utility setup checklist, and building rules:
+        </p>
+        <div id="qrcodeBox"></div>
+        <div class="tent-wifi-box">
+          <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">Instant Unit Wi-Fi</div>
+          <div>Network: <strong id="tentWifiSsid" style="font-family: monospace;"></strong></div>
+          <div>Password: <strong id="tentWifiPass" style="font-family: monospace;"></strong></div>
+        </div>
+        <div style="font-size: 10px; color: #64748b; font-family: monospace; word-break: break-all;" id="tentFallbackUrl"></div>
+
+        <div class="no-print" style="display: flex; gap: 10px; margin-top: 10px;">
+          <button class="btn btn-primary" onclick="window.print()">Print 5x7 Countertop Card</button>
+          <button class="btn" id="closeQrModalBtn" style="background:#e2e8f0; color:#0f172a;">Close Preview</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // PASTE YOUR TWO SUPABASE KEYS HERE (From Project Settings -> API)
+    // =========================================================================
+    const SUPABASE_URL = "https://csiwbnosdxnwpdlqydkl.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_g6EY_Po3DPPMgnHsO0gdmg_hdMmw1y3";
+
+    const isCloudConfigured =
+      SUPABASE_URL.startsWith("https://") &&
+      !SUPABASE_URL.includes("YOUR_SUPABASE") &&
+      SUPABASE_ANON_KEY.length > 20;
+
+    const supabaseClient = isCloudConfigured
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    // Default Seed State
+    let portfolioState = {
+      company_id: null,
+      company_name: "Summit Peak Property Management",
+      activePropertyKey: "cahill",
+      activeUnitIndex: 0,
+      properties: {
+        cahill: {
+          db_id: null,
+          id: "cahill",
+          property_name: "Cahill Pond Apartments",
+          accent_color: "#10b981",
+          hero_image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=900&q=80",
+          welcome_message: "Welcome to Cahill Pond! Enjoy our quiet pondside trails, community garden plots, and renovated clubhouse. Below you'll find your unit access details and downloadable Cahill Pond welcome packet.",
+          onboarding_packets: [
+            { title: "Cahill Pond Welcome Packet & Trail Map.pdf", meta: "PDF • 2.4 MB", url: "#" },
+            { title: "Clubhouse & Pond Amenity Rules.pdf", meta: "PDF • 850 KB", url: "#" }
+          ],
+          utilities: [
+            { name: "Set up Colorado Springs Utilities (Electric/Water)", url: "https://www.csu.org" },
+            { name: "Upload Renter's Insurance Certificate", url: "#insurance" },
+            { name: "Register Vehicle for Cahill Surface Lot Pass", url: "#parking" }
+          ],
+          rules: [
+            { title: "Trash & Valet Recycling Schedule", content: "Dumpsters are at the West enclosure. Valet pickup runs Tuesday & Friday at 8:00 AM." },
+            { title: "Pet Policy & Bark Park Hours", content: "Up to 2 pets permitted. The fenced Cahill Bark Park is open dawn to dusk." },
+            { title: "24/7 Emergency Maintenance", content: "For active leaks or heating emergencies, call Summit Peak Dispatch at (719) 555-0192." }
+          ],
+          units: [
+            { db_id: null, unit_number: "Unit 8", slug_token: "cahill-8-x9f2", wifi_ssid: "CahillPond_Unit8_5G", wifi_pass: "PondLife2026!", access_info: "Mailbox #8 (North Kiosk) • Gate Code: #4491" },
+            { db_id: null, unit_number: "Unit 12", slug_token: "cahill-12-k3m9", wifi_ssid: "CahillPond_Unit12_5G", wifi_pass: "TrailView12#", access_info: "Mailbox #12 (North Kiosk) • Gate Code: #4491" }
+          ]
+        },
+        foundry: {
+          db_id: null,
+          id: "foundry",
+          property_name: "The Foundry Urban Lofts",
+          accent_color: "#f59e0b",
+          hero_image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=900&q=80",
+          welcome_message: "Welcome to The Foundry Urban Lofts downtown. Your loft is equipped with gigabit fiber and smart keyfob entry. Review your freight elevator reservation packet and garage instructions below.",
+          onboarding_packets: [
+            { title: "Foundry Lofts Resident Handbook.pdf", meta: "PDF • 3.1 MB", url: "#" },
+            { title: "Freight Elevator & Move-In Dock Rules.pdf", meta: "PDF • 1.1 MB", url: "#" }
+          ],
+          utilities: [
+            { name: "Activate Symmetrical Gigabit Fiber Port", url: "#fiber" },
+            { name: "Register Smartphone NFC Building Keyfob", url: "#nfc" }
+          ],
+          rules: [
+            { title: "Trash Chute & P1 Cardboard Room", content: "Chutes are on every floor. Flatten moving boxes and leave them in the P1 Recycling Room." },
+            { title: "Rooftop Sky Deck Reservations", content: "Open until 11:00 PM nightly. Gas fire pits can be reserved in the resident portal." }
+          ],
+          units: [
+            { db_id: null, unit_number: "Loft 402", slug_token: "foundry-402-z7p1", wifi_ssid: "FoundryFiber_Loft402", wifi_pass: "IronWorks402#", access_info: "Parcel Locker #402 (Lobby) • Elevator PIN: 8820#" }
+          ]
+        }
+      }
+    };
+
+    const statusBadge = document.getElementById('cloudStatusBadge');
+
+    function getActiveProperty() {
+      return portfolioState.properties[portfolioState.activePropertyKey];
+    }
+
+    function getActiveUnit() {
+      const prop = getActiveProperty();
+      return prop.units[portfolioState.activeUnitIndex] || prop.units[0];
+    }
+
+    // LOAD PORTFOLIO FROM SUPABASE OR LOCALSTORAGE
+    async function loadPortfolioData() {
+      if (supabaseClient) {
+        statusBadge.textContent = "☁️ Supabase Connected";
+        statusBadge.style.background = "#065f46";
+        statusBadge.style.color = "#d1fae5";
+        statusBadge.style.borderColor = "#10b981";
+
+        const { data: comp } = await supabaseClient.from('companies').select('*').limit(1).single();
+        if (comp) {
+          portfolioState.company_id = comp.id;
+          portfolioState.company_name = comp.company_name;
+        }
+
+        const { data: props } = await supabaseClient
+          .from('properties')
+          .select('*, units(*)');
+
+        if (props && props.length > 0) {
+          const map = {};
+          props.forEach(p => {
+            map[p.property_key] = {
+              db_id: p.id,
+              id: p.property_key,
+              property_name: p.property_name,
+              accent_color: p.accent_color || "#10b981",
+              hero_image: p.hero_image || "",
+              welcome_message: p.welcome_message || "",
+              onboarding_packets: p.onboarding_packets || [],
+              utilities: p.utilities || [],
+              rules: p.rules || [],
+              units: (p.units || []).map(u => ({
+                db_id: u.id,
+                unit_number: u.unit_number,
+                slug_token: u.slug_token,
+                wifi_ssid: u.wifi_ssid,
+                wifi_pass: u.wifi_pass,
+                access_info: u.access_info
+              }))
+            };
+          });
+          portfolioState.properties = map;
+          portfolioState.activePropertyKey = Object.keys(map)[0];
+          portfolioState.activeUnitIndex = 0;
+        }
+      } else {
+        statusBadge.textContent = "⚡ Local Browser Mode (Paste Supabase Keys for Cloud)";
+        const saved = localStorage.getItem('pmc_portfolio_state');
+        if (saved) {
+          portfolioState = JSON.parse(saved);
+        }
+      }
+      syncEditorInputs();
+    }
+
+    // SAVE CHANGES TO SUPABASE + LOCALSTORAGE
+    async function savePortfolioData() {
+      const saveBtn = document.getElementById('saveCloudBtn');
+      saveBtn.textContent = "Saving...";
+
+      // Always mirror to localStorage for instant cross-tab testing
+      localStorage.setItem('pmc_portfolio_state', JSON.stringify(portfolioState));
+
+      if (supabaseClient) {
+        const prop = getActiveProperty();
+        const unit = getActiveUnit();
+
+        // Upsert Property
+        const { data: savedProp, error: propErr } = await supabaseClient
+          .from('properties')
+          .upsert({
+            id: prop.db_id || undefined,
+            company_id: portfolioState.company_id,
+            property_key: prop.id,
+            property_name: prop.property_name,
+            accent_color: prop.accent_color,
+            hero_image: prop.hero_image,
+            welcome_message: prop.welcome_message,
+            onboarding_packets: prop.onboarding_packets,
+            utilities: prop.utilities,
+            rules: prop.rules
+          }, { onConflict: 'property_key' })
+          .select()
+          .single();
+
+        if (!propErr && savedProp) {
+          prop.db_id = savedProp.id;
+
+          // Upsert Active Unit
+          const { data: savedUnit } = await supabaseClient
+            .from('units')
+            .upsert({
+              id: unit.db_id || undefined,
+              property_id: prop.db_id,
+              unit_number: unit.unit_number,
+              slug_token: unit.slug_token,
+              wifi_ssid: unit.wifi_ssid,
+              wifi_pass: unit.wifi_pass,
+              access_info: unit.access_info
+            }, { onConflict: 'slug_token' })
+            .select()
+            .single();
+
+          if (savedUnit) unit.db_id = savedUnit.id;
+        }
+      }
+
+      saveBtn.textContent = "✓ Saved!";
+      setTimeout(() => { saveBtn.textContent = "💾 Save Changes"; }, 1800);
+    }
+
+    // UPLOAD FILE HELPER (Uploads to Supabase `property-assets` bucket or falls back to Data URL)
+    async function uploadAssetFile(file) {
+      if (supabaseClient) {
+        const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const filePath = `${portfolioState.activePropertyKey}/${Date.now()}_${cleanName}`;
+        const { error } = await supabaseClient.storage
+          .from('property-assets')
+          .upload(filePath, file, { upsert: true });
+
+        if (!error) {
+          const { data } = supabaseClient.storage.from('property-assets').getPublicUrl(filePath);
+          return data.publicUrl;
+        }
+      }
+      // Fallback for Local Mode
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function syncEditorInputs() {
+      const prop = getActiveProperty();
+      const unit = getActiveUnit();
+
+      // Auto-persist local copy on every edit
+      localStorage.setItem('pmc_portfolio_state', JSON.stringify(portfolioState));
+
+      document.documentElement.style.setProperty('--brand-accent', prop.accent_color);
+      document.documentElement.style.setProperty('--brand-glow', prop.accent_color + '33');
+
+      const propSelect = document.getElementById('propertySelect');
+      propSelect.innerHTML = Object.values(portfolioState.properties).map(p =>
+        `<option value="${p.id}" ${p.id === prop.id ? 'selected' : ''}>${p.property_name} (${p.units.length} Units)</option>`
+      ).join('');
+
+      const unitSelect = document.getElementById('unitSelect');
+      unitSelect.innerHTML = prop.units.map((u, idx) =>
+        `<option value="${idx}" ${idx === portfolioState.activeUnitIndex ? 'selected' : ''}>${u.unit_number}</option>`
+      ).join('');
+
+      document.getElementById('propNameInput').value = prop.property_name;
+      document.getElementById('propColorInput').value = prop.accent_color;
+      document.getElementById('colorHexLabel').textContent = prop.accent_color;
+      document.getElementById('propHeroUrlInput').value = prop.hero_image.startsWith('data:') ? '(Local Uploaded Image)' : prop.hero_image;
+      document.getElementById('propWelcomeInput').value = prop.welcome_message;
+
+      document.getElementById('packetListEditor').innerHTML = prop.onboarding_packets.map((pkt, i) => `
+        <div class="editor-list-row">
+          <div>
+            <strong>📄 ${pkt.title}</strong>
+            <span class="row-meta">${pkt.meta}</span>
+          </div>
+          <button class="delete-btn" onclick="removePacket(${i})">Remove</button>
+        </div>
+      `).join('');
+
+      document.getElementById('activeUnitBadge').textContent = `Tier 3 • Editing ${unit.unit_number}`;
+      document.getElementById('unitNumberInput').value = unit.unit_number;
+      document.getElementById('unitSlugInput').value = unit.slug_token;
+      document.getElementById('unitWifiSsidInput').value = unit.wifi_ssid;
+      document.getElementById('unitWifiPassInput').value = unit.wifi_pass;
+      document.getElementById('unitAccessInput').value = unit.access_info;
+
+      document.getElementById('utilityListEditor').innerHTML = prop.utilities.map((u, i) => `
+        <div class="editor-list-row">
+          <div><strong>☑ ${u.name}</strong><span class="row-meta">${u.url}</span></div>
+          <button class="delete-btn" onclick="removeUtility(${i})">Remove</button>
+        </div>
+      `).join('');
+
+      document.getElementById('rulesListEditor').innerHTML = prop.rules.map((r, i) => `
+        <div class="editor-list-row">
+          <div><strong>📌 ${r.title}</strong><span class="row-meta">${r.content.substring(0, 48)}...</span></div>
+          <button class="delete-btn" onclick="removeRule(${i})">Remove</button>
+        </div>
+      `).join('');
+
+      renderMobilePreview();
+    }
+
+    function renderMobilePreview() {
+      const prop = getActiveProperty();
+      const unit = getActiveUnit();
+
+      localStorage.setItem('pmc_portfolio_state', JSON.stringify(portfolioState));
+
+      const linkEl = document.getElementById('liveUrlPreview');
+      linkEl.textContent = `guide.html?unit=${unit.slug_token} ↗`;
+      linkEl.href = `guide.html?unit=${unit.slug_token}`;
+
+      document.getElementById('mobilePreviewFrame').innerHTML = `
+        <div class="hero-banner" style="background-image: url('${prop.hero_image}')">
+          <div class="hero-overlay"></div>
+          <div class="hero-content">
+            <span class="pmc-badge">Managed by ${portfolioState.company_name}</span>
+            <h1 class="property-title">${prop.property_name}</h1>
+            <div class="unit-pill">Welcome to ${unit.unit_number}</div>
+          </div>
+        </div>
+
+        <div class="mobile-body">
+          <div class="m-card">
+            <div class="m-title">Community Welcome</div>
+            <p class="m-welcome">${prop.welcome_message}</p>
+          </div>
+
+          <div class="m-card">
+            <div class="m-title">
+              <span>Property Onboarding Packet</span>
+              <span>${prop.onboarding_packets.length} Files</span>
+            </div>
+            ${prop.onboarding_packets.map(pkt => `
+              <a href="${pkt.url}" target="_blank" class="m-packet">
+                <div>
+                  <div style="font-size: 13px; font-weight: 600;">${pkt.title}</div>
+                  <div style="font-size: 10px; color: #94a3b8;">${pkt.meta}</div>
+                </div>
+                <span class="m-packet-tag">Open PDF</span>
+              </a>
+            `).join('')}
+          </div>
+
+          <div class="m-card">
+            <div class="m-title">Unit Connectivity & Access</div>
+            <div class="m-wifi-grid">
+              <div class="m-box">
+                <div class="m-label">Wi-Fi SSID</div>
+                <div class="m-val">${unit.wifi_ssid}</div>
+              </div>
+              <div class="m-box">
+                <div class="m-label">Password</div>
+                <div class="m-val">${unit.wifi_pass}</div>
+              </div>
+            </div>
+            <div class="m-box">
+              <div class="m-label">Mailbox & Entry Notes</div>
+              <div class="m-val" style="font-family: sans-serif; font-size: 12px;">${unit.access_info}</div>
+            </div>
+            <button class="m-btn" onclick="navigator.clipboard.writeText('${unit.wifi_pass}'); this.textContent='✓ Copied Wi-Fi Password!';">
+              Copy Unit Wi-Fi Password
+            </button>
+          </div>
+
+          <div class="m-card">
+            <div class="m-title">Move-In Action Checklist</div>
+            ${prop.utilities.map(u => `
+              <div class="m-check-row">
+                <label style="display:flex; align-items:center; gap:8px;">
+                  <input type="checkbox" style="accent-color: var(--brand-accent);" />
+                  <span>${u.name}</span>
+                </label>
+                <a href="${u.url}" target="_blank" style="color: var(--brand-accent); font-weight: 600; text-decoration: none;">Open &rarr;</a>
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="m-card">
+            <div class="m-title">Community Rules & Contacts</div>
+            ${prop.rules.map(r => `
+              <details class="m-rule">
+                <summary>${r.title}</summary>
+                <p style="margin-top:6px; color:#cbd5e1;">${r.content}</p>
+              </details>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // EVENT LISTENERS
+    document.getElementById('saveCloudBtn').addEventListener('click', savePortfolioData);
+
+    document.getElementById('propertySelect').addEventListener('change', (e) => {
+      portfolioState.activePropertyKey = e.target.value;
+      portfolioState.activeUnitIndex = 0;
+      syncEditorInputs();
+    });
+
+    document.getElementById('unitSelect').addEventListener('change', (e) => {
+      portfolioState.activeUnitIndex = parseInt(e.target.value, 10);
+      syncEditorInputs();
+    });
+
+    document.getElementById('propNameInput').addEventListener('input', (e) => {
+      getActiveProperty().property_name = e.target.value;
+      renderMobilePreview();
+    });
+
+    document.getElementById('propColorInput').addEventListener('input', (e) => {
+      const hex = e.target.value;
+      getActiveProperty().accent_color = hex;
+      document.getElementById('colorHexLabel').textContent = hex;
+      document.documentElement.style.setProperty('--brand-accent', hex);
+      document.documentElement.style.setProperty('--brand-glow', hex + '33');
+      renderMobilePreview();
+    });
+
+    document.getElementById('propHeroUrlInput').addEventListener('input', (e) => {
+      getActiveProperty().hero_image = e.target.value;
+      renderMobilePreview();
+    });
+
+    // HERO PHOTO UPLOAD TO SUPABASE BUCKET
+    document.getElementById('propHeroFileInput').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const btnText = document.getElementById('heroUploadBtnText');
+      btnText.textContent = "Uploading...";
+      const url = await uploadAssetFile(file);
+      getActiveProperty().hero_image = url;
+      btnText.textContent = "Upload Photo";
+      syncEditorInputs();
+      await savePortfolioData();
+    });
+
+    document.getElementById('propWelcomeInput').addEventListener('input', (e) => {
+      getActiveProperty().welcome_message = e.target.value;
+      renderMobilePreview();
+    });
+
+    document.getElementById('unitNumberInput').addEventListener('input', (e) => {
+      getActiveUnit().unit_number = e.target.value;
+      renderMobilePreview();
+    });
+    document.getElementById('unitSlugInput').addEventListener('input', (e) => {
+      getActiveUnit().slug_token = e.target.value;
+      renderMobilePreview();
+    });
+    document.getElementById('unitWifiSsidInput').addEventListener('input', (e) => {
+      getActiveUnit().wifi_ssid = e.target.value;
+      renderMobilePreview();
+    });
+    document.getElementById('unitWifiPassInput').addEventListener('input', (e) => {
+      getActiveUnit().wifi_pass = e.target.value;
+      renderMobilePreview();
+    });
+    document.getElementById('unitAccessInput').addEventListener('input', (e) => {
+      getActiveUnit().access_info = e.target.value;
+      renderMobilePreview();
+    });
+
+    // PDF ONBOARDING PACKET UPLOAD TO SUPABASE BUCKET
+    document.getElementById('newPacketFile').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const btnText = document.getElementById('pdfUploadBtnText');
+      btnText.textContent = "Uploading PDF...";
+      const customTitle = document.getElementById('newPacketTitle').value.trim() || file.name;
+      const sizeKb = Math.round(file.size / 1024);
+      const publicUrl = await uploadAssetFile(file);
+
+      getActiveProperty().onboarding_packets.push({
+        title: customTitle,
+        meta: `${file.name.split('.').pop().toUpperCase()} • ${sizeKb} KB`,
+        url: publicUrl
+      });
+
+      document.getElementById('newPacketTitle').value = '';
+      btnText.textContent = "+ Upload PDF / Doc";
+      syncEditorInputs();
+      await savePortfolioData();
+    });
+
+    window.removePacket = (idx) => {
+      getActiveProperty().onboarding_packets.splice(idx, 1);
+      syncEditorInputs();
+    };
+
+    document.getElementById('addUtilBtn').addEventListener('click', () => {
+      const name = document.getElementById('newUtilName').value.trim();
+      const url = document.getElementById('newUtilUrl').value.trim() || '#';
+      if (!name) return;
+      getActiveProperty().utilities.push({ name, url });
+      document.getElementById('newUtilName').value = '';
+      document.getElementById('newUtilUrl').value = '';
+      syncEditorInputs();
+    });
+
+    window.removeUtility = (idx) => {
+      getActiveProperty().utilities.splice(idx, 1);
+      syncEditorInputs();
+    };
+
+    document.getElementById('addRuleBtn').addEventListener('click', () => {
+      const title = document.getElementById('newRuleTitle').value.trim();
+      const content = document.getElementById('newRuleBody').value.trim();
+      if (!title || !content) return;
+      getActiveProperty().rules.push({ title, content });
+      document.getElementById('newRuleTitle').value = '';
+      document.getElementById('newRuleBody').value = '';
+      syncEditorInputs();
+    });
+
+    window.removeRule = (idx) => {
+      getActiveProperty().rules.splice(idx, 1);
+      syncEditorInputs();
+    };
+
+    document.getElementById('addPropertyBtn').addEventListener('click', async () => {
+      const name = prompt("Enter New Property / Community Name:", "Pine Creek Townhomes");
+      if (!name) return;
+      const key = name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10) + '_' + Math.floor(Math.random() * 90 + 10);
+      portfolioState.properties[key] = {
+        db_id: null,
+        id: key,
+        property_name: name,
+        accent_color: "#38bdf8",
+        hero_image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=900&q=80",
+        welcome_message: `Welcome to ${name}! Below you will find your custom move-in packet, utility setup links, and unit Wi-Fi credentials.`,
+        onboarding_packets: [],
+        utilities: [{ name: "Set up Electric & Water Utility Account", url: "#" }],
+        rules: [{ title: "Trash & Recycling Pickup", content: "Curbside pickup occurs every Wednesday morning at 7:00 AM." }],
+        units: [
+          {
+            db_id: null,
+            unit_number: "Unit 101",
+            slug_token: `${key}-101`,
+            wifi_ssid: `${name.replace(/\s+/g, '')}_101`,
+            wifi_pass: "WelcomeHome101!",
+            access_info: "Mailbox #101 • Front Door Smart Lock"
+          }
+        ]
+      };
+      portfolioState.activePropertyKey = key;
+      portfolioState.activeUnitIndex = 0;
+      syncEditorInputs();
+      await savePortfolioData();
+    });
+
+    document.getElementById('addUnitBtn').addEventListener('click', async () => {
+      const unitNum = prompt("Enter Unit Number (e.g., Unit 14):", "Unit 14");
+      if (!unitNum) return;
+      const prop = getActiveProperty();
+      const cleanNum = unitNum.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      prop.units.push({
+        db_id: null,
+        unit_number: unitNum,
+        slug_token: `${prop.id}-${cleanNum}-${Math.random().toString(36).substring(2, 5)}`,
+        wifi_ssid: `${prop.property_name.split(' ')[0]}_${cleanNum}_5G`,
+        wifi_pass: `Resident${cleanNum}!`,
+        access_info: `Mailbox #${cleanNum} • Standard Entry`
+      });
+      portfolioState.activeUnitIndex = prop.units.length - 1;
+      syncEditorInputs();
+      await savePortfolioData();
+    });
+
+    document.getElementById('bulkCsvBtn').addEventListener('click', async () => {
+      const sample = "Unit 201,Cahill_201_5G,Pass201!,Mailbox #201\nUnit 202,Cahill_202_5G,Pass202!,Mailbox #202";
+      const raw = prompt("Paste CSV rows (Unit Number, Wi-Fi SSID, Wi-Fi Password, Access Note):", sample);
+      if (!raw) return;
+      const prop = getActiveProperty();
+      raw.split('\n').forEach(line => {
+        const parts = line.split(',').map(s => s.trim());
+        if (parts.length >= 3) {
+          const clean = parts[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+          prop.units.push({
+            db_id: null,
+            unit_number: parts[0],
+            slug_token: `${prop.id}-${clean}-${Math.random().toString(36).substring(2, 5)}`,
+            wifi_ssid: parts[1],
+            wifi_pass: parts[2],
+            access_info: parts[3] || "Standard Entry"
+          });
+        }
+      });
+      portfolioState.activeUnitIndex = prop.units.length - 1;
+      syncEditorInputs();
+      await savePortfolioData();
+    });
+
+    // PRINTABLE QR WELCOME TENT CARD GENERATOR
+    document.getElementById('openQrModalBtn').addEventListener('click', () => {
+      const prop = getActiveProperty();
+      const unit = getActiveUnit();
+      const basePath = window.location.href.replace(/admin\.html.*$/, '');
+      const fullUrl = `${basePath}guide.html?unit=${unit.slug_token}`;
+
+      document.getElementById('tentHeroBanner').style.backgroundImage = `url('${prop.hero_image}')`;
+      document.getElementById('tentPmcName').textContent = portfolioState.company_name;
+      document.getElementById('tentPropName').textContent = prop.property_name;
+      document.getElementById('tentUnitName').textContent = unit.unit_number;
+      document.getElementById('tentWifiSsid').textContent = unit.wifi_ssid;
+      document.getElementById('tentWifiPass').textContent = unit.wifi_pass;
+      document.getElementById('tentFallbackUrl').textContent = fullUrl;
+
+      const qrContainer = document.getElementById('qrcodeBox');
+      qrContainer.innerHTML = '';
+      new QRCode(qrContainer, {
+        text: fullUrl,
+        width: 160,
+        height: 160,
+        colorDark: "#0f172a",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      document.getElementById('qrModal').classList.add('active');
+    });
+
+    document.getElementById('closeQrModalBtn').addEventListener('click', () => {
+      document.getElementById('qrModal').classList.remove('active');
+    });
+
+    loadPortfolioData();
+  </script>
+</body>
+</html>
