@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PropGuide — Zero-App Resident Onboarding for Property Managers</title>
-  <!-- Supabase JS v2 CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <title>PropGuide — Digital Move-In Guides for Property Managers</title>
+  <meta name="description" content="Give every resident one place for move-in instructions, utility links, building rules, and unit details. Create a guide for each property and print a QR welcome card for each unit." />
   <!-- QR Code Generator -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
@@ -15,6 +14,7 @@
       --card-bg: #1e293b;
       --border-subtle: #334155;
       --text-main: #f8fafc;
+      --text-soft: #cbd5e1;
       --text-muted: #94a3b8;
       --accent: #10b981;
       --accent-glow: rgba(16, 185, 129, 0.22);
@@ -28,11 +28,37 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
+    html {
+      scroll-behavior: smooth;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; }
+    }
+
     body {
       background-color: var(--bg-deep);
       color: var(--text-main);
       line-height: 1.6;
       overflow-x: hidden;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
 
     /* NAVIGATION BAR */
@@ -43,6 +69,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 16px;
       border-bottom: 1px solid rgba(51, 65, 85, 0.5);
     }
 
@@ -55,6 +82,7 @@
       letter-spacing: -0.02em;
       color: #fff;
       text-decoration: none;
+      white-space: nowrap;
     }
 
     .brand-dot {
@@ -63,17 +91,31 @@
       border-radius: 50%;
       background: var(--accent);
       box-shadow: 0 0 12px var(--accent);
+      flex-shrink: 0;
     }
 
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 20px;
+    }
+
+    .nav-link {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-soft);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .nav-link:hover {
+      color: #fff;
     }
 
     .btn {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
       padding: 10px 18px;
       border-radius: 8px;
@@ -85,6 +127,7 @@
       border: 1px solid var(--border-subtle);
       background: var(--card-bg);
       color: var(--text-main);
+      white-space: nowrap;
     }
 
     .btn:hover {
@@ -103,25 +146,20 @@
       opacity: 0.92;
     }
 
+    .btn-lg {
+      padding: 14px 24px;
+      font-size: 15px;
+    }
+
     /* HERO SECTION */
     .hero {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 64px 24px 48px;
+      padding: 56px 24px 40px;
       display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
+      grid-template-columns: minmax(0, 1fr) 300px;
       gap: 48px;
       align-items: center;
-    }
-
-    @media (max-width: 960px) {
-      .hero {
-        grid-template-columns: 1fr;
-        text-align: center;
-      }
-      .hero-badges, .hero-cta-row, .qr-demo-box {
-        justify-content: center;
-      }
     }
 
     .eyebrow {
@@ -141,16 +179,18 @@
     }
 
     h1 {
-      font-size: clamp(34px, 4.5vw, 52px);
+      font-size: clamp(36px, 4.6vw, 56px);
       font-weight: 900;
-      line-height: 1.1;
+      line-height: 1.08;
       letter-spacing: -0.03em;
       margin-bottom: 20px;
+      text-wrap: balance;
     }
 
     .gradient-text {
       background: linear-gradient(90deg, #34d399, #38bdf8);
       -webkit-background-clip: text;
+      background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
@@ -158,85 +198,641 @@
       font-size: 17px;
       color: var(--text-muted);
       margin-bottom: 28px;
-      max-width: 580px;
+      max-width: 620px;
     }
 
     .hero-cta-row {
       display: flex;
       flex-wrap: wrap;
       gap: 14px;
-      margin-bottom: 32px;
+      margin-bottom: 24px;
     }
 
-    /* LIVE INTERACTIVE QR & PROPERTY SWITCHER BOX */
-    .qr-demo-box {
+    .trust-list {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 22px;
+      font-size: 14px;
+      color: var(--text-soft);
+    }
+
+    .trust-list li::before {
+      content: "✓";
+      color: var(--accent);
+      font-weight: 800;
+      margin-right: 7px;
+    }
+
+    /* SAMPLE GUIDE QR CARD */
+    .sample-guide-card {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: 16px;
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      gap: 20px;
+      padding: 22px;
+      text-align: center;
       box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
     }
 
-    #liveQrCanvas {
-      background: #ffffff;
-      padding: 10px;
-      border-radius: 10px;
-      border: 2px solid var(--accent);
-      flex-shrink: 0;
-    }
-
-    .qr-demo-info {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      text-align: left;
-    }
-
-    .qr-demo-info label {
-      font-size: 11px;
+    .sample-guide-label {
+      font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--accent);
       font-weight: 700;
+      margin-bottom: 14px;
     }
 
-    .qr-demo-info select {
-      background: #020617;
-      color: #fff;
+    #sampleQr {
+      display: inline-block;
+      background: #ffffff;
+      padding: 10px;
+      border-radius: 10px;
+      border: 2px solid var(--accent);
+      line-height: 0;
+      margin-bottom: 14px;
+    }
+
+    .sample-guide-text {
+      font-size: 14px;
+      color: var(--text-soft);
+      margin-bottom: 10px;
+    }
+
+    .text-link {
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .text-link:hover {
+      text-decoration: underline;
+    }
+
+    /* INTERACTIVE DEMO */
+    .demo-section {
+      max-width: 1200px;
+      margin: 0 auto 72px;
+      padding: 0 24px;
+      scroll-margin-top: 16px;
+    }
+
+    .demo-panel {
+      background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
-      padding: 8px 12px;
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55), 0 0 30px var(--accent-glow);
+    }
+
+    .demo-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+    }
+
+    .demo-head h2 {
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 4px;
+    }
+
+    .demo-head p {
+      color: var(--text-muted);
+      font-size: 15px;
+      max-width: 640px;
+    }
+
+    .demo-tag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      background: rgba(16, 185, 129, 0.12);
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .reset-btn {
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-soft);
       border-radius: 8px;
+      padding: 8px 14px;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .reset-btn:hover {
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 290px 240px;
+      grid-template-areas: "editor phone card";
+      gap: 32px;
+      align-items: start;
+    }
+
+    .demo-editor { grid-area: editor; min-width: 0; }
+    .demo-phone-col { grid-area: phone; }
+    .demo-card-col { grid-area: card; }
+
+    .col-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-soft);
+      margin-bottom: 14px;
+    }
+
+    .step-num {
+      display: inline-grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #020617;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0;
+      flex-shrink: 0;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 18px;
+      border: 0;
+      min-width: 0;
+    }
+
+    .field-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .field label,
+    .field legend {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .field legend {
+      margin-bottom: 8px;
+    }
+
+    .char-count {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .demo-input {
+      width: 100%;
+      background: var(--bg-deep);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+      line-height: 1.45;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .demo-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    textarea.demo-input {
+      resize: vertical;
+      min-height: 96px;
+    }
+
+    .swatches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .swatch,
+    .photo-option {
+      position: relative;
       cursor: pointer;
     }
 
-    /* RIGHT COLUMN: EMBEDDED LIVE PHONE SIMULATOR */
-    .phone-showcase {
+    .swatch input,
+    .photo-option input {
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+    }
+
+    .swatch-dot {
+      display: block;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+
+    .swatch input:checked + .swatch-dot {
+      border-color: #fff;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18);
+    }
+
+    .swatch input:focus-visible + .swatch-dot,
+    .photo-option input:focus-visible + .photo-thumb {
+      outline: 2px solid #fff;
+      outline-offset: 2px;
+    }
+
+    .photos {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .photo-thumb {
+      display: block;
+      aspect-ratio: 16 / 10;
+      border-radius: 8px;
+      background-color: var(--card-bg);
+      background-size: cover;
+      background-position: center;
+      border: 2px solid transparent;
+      transition: border-color 0.2s;
+    }
+
+    .photo-option input:checked + .photo-thumb {
+      border-color: var(--accent);
+    }
+
+    .photo-caption {
+      display: block;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .photo-option input:checked ~ .photo-caption {
+      color: var(--text-main);
+      font-weight: 700;
+    }
+
+    .demo-cta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px 16px;
+      margin-top: 6px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(51, 65, 85, 0.6);
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    /* RESIDENT PHONE PREVIEW (sample data only) */
+    .phone {
+      --g-accent: #10b981;
+      width: 100%;
+      max-width: 290px;
+      height: 540px;
+      margin: 0 auto;
+      background: var(--bg-surface);
+      border: 7px solid var(--card-bg);
+      border-radius: 34px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6);
+    }
+
+    .phone-scroll {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-subtle) transparent;
+    }
+
+    .g-hero {
+      position: relative;
+      min-height: 168px;
+      background-color: var(--card-bg);
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: flex-end;
+      padding: 14px;
+    }
+
+    .g-hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(15, 23, 42, 0.98) 8%, rgba(15, 23, 42, 0.2) 100%);
+    }
+
+    .g-hero-content {
+      position: relative;
+      min-width: 0;
+    }
+
+    .g-badge {
+      display: inline-block;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-soft);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .g-title {
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.15;
+      color: #fff;
+      margin-top: 6px;
+      overflow-wrap: anywhere;
+    }
+
+    .g-unit {
+      display: inline-block;
+      background: var(--g-accent);
+      color: #020617;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 2px 10px;
+      border-radius: 6px;
+      margin-top: 8px;
+    }
+
+    .g-body {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .g-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .g-card-title {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--g-accent);
+      margin-bottom: 6px;
+    }
+
+    .g-text {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-soft);
+      overflow-wrap: anywhere;
+      white-space: pre-line;
+    }
+
+    .g-wifi-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .g-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 6px 8px;
+      min-width: 0;
+    }
+
+    .g-box-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .g-box-value {
+      min-width: 0;
+      text-align: right;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      overflow-wrap: anywhere;
+    }
+
+    .g-btn {
+      width: 100%;
+      background: var(--g-accent);
+      color: #020617;
+      border: 0;
+      border-radius: 6px;
+      padding: 9px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .g-check {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 13px;
+      line-height: 1.4;
+      color: #e2e8f0;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+      cursor: pointer;
+    }
+
+    .g-check:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .g-check input {
+      accent-color: var(--g-accent);
+      width: 16px;
+      height: 16px;
+      margin-top: 1px;
+      flex-shrink: 0;
+    }
+
+    .g-check input:checked + span {
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+
+    .g-rule {
+      border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+      padding: 7px 0;
+    }
+
+    .g-rule:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .g-rule summary {
+      font-size: 13px;
+      font-weight: 700;
+      color: #e2e8f0;
+      cursor: pointer;
+    }
+
+    .g-rule p {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .g-footer {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 4px 12px 16px;
+    }
+
+    /* PRINTED WELCOME CARD PREVIEW */
+    .print-card {
+      --g-accent: #10b981;
+      width: 100%;
+      max-width: 240px;
+      aspect-ratio: 5 / 7;
+      background: #ffffff;
+      color: #0f172a;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6);
+      border-top: 6px solid var(--g-accent);
+    }
+
+    .pc-hero {
+      position: relative;
+      height: 31%;
+      background-color: #334155;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: flex-end;
+      padding: 10px 12px;
+      color: #fff;
+    }
+
+    .pc-hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(2, 6, 23, 0.85) 10%, rgba(2, 6, 23, 0.15) 100%);
+    }
+
+    .pc-hero-text {
+      position: relative;
+      min-width: 0;
+    }
+
+    .pc-title {
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .pc-unit {
+      font-size: 12px;
+      font-weight: 700;
+      opacity: 0.95;
+    }
+
+    .pc-body {
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: space-evenly;
+      gap: 8px;
+      padding: 10px 12px 12px;
+      text-align: center;
     }
 
-    .phone-frame {
-      width: 370px;
-      height: 680px;
-      background: var(--bg-surface);
-      border: 8px solid #1e293b;
-      border-radius: 40px;
-      overflow: hidden;
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 30px var(--accent-glow);
-      display: flex;
-      flex-direction: column;
+    .pc-scan {
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.35;
+      color: #334155;
     }
 
-    .phone-frame iframe {
+    #cardQr {
+      line-height: 0;
+    }
+
+    .pc-wifi {
       width: 100%;
-      height: 100%;
-      border: none;
+      background: #f1f5f9;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #334155;
+    }
+
+    .pc-wifi strong {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: #0f172a;
+      overflow-wrap: anywhere;
+    }
+
+    .card-note {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 14px;
+      max-width: 240px;
     }
 
     /* THREE-TIER ARCHITECTURE SECTION */
@@ -326,64 +922,333 @@
       font-size: 13px;
       color: var(--text-muted);
     }
+
+    /* RESPONSIVE */
+    @media (max-width: 1099px) {
+      .demo-grid {
+        grid-template-columns: minmax(0, 1fr) 290px;
+        grid-template-areas:
+          "editor phone"
+          "card phone";
+      }
+    }
+
+    @media (max-width: 1023px) {
+      .hero {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+      .sample-guide-card {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        text-align: left;
+        max-width: 520px;
+      }
+      #sampleQr {
+        margin-bottom: 0;
+        flex-shrink: 0;
+      }
+    }
+
+    @media (max-width: 719px) {
+      .navbar {
+        padding: 16px;
+      }
+      .nav-actions {
+        gap: 14px;
+      }
+      .nav-link-demo {
+        display: none;
+      }
+      .nav-actions .btn {
+        padding: 9px 14px;
+      }
+      .hero {
+        padding: 36px 16px 32px;
+      }
+      .hero-cta-row .btn {
+        width: 100%;
+      }
+      .hero-sub {
+        font-size: 16px;
+      }
+      .eyebrow {
+        letter-spacing: 0.05em;
+        padding: 6px 12px;
+      }
+      .sample-guide-card {
+        padding: 18px;
+      }
+      /* Scanning your own phone screen isn't useful, so mobile gets the link only. */
+      #sampleQr {
+        display: none;
+      }
+      .demo-section {
+        padding: 0 16px;
+      }
+      .demo-panel {
+        padding: 20px 16px;
+        border-radius: 16px;
+      }
+      .demo-head {
+        flex-direction: column;
+      }
+      .demo-head h2 {
+        font-size: 21px;
+      }
+      .demo-grid {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+          "editor"
+          "phone"
+          "card";
+        gap: 28px;
+      }
+      .demo-phone-col .col-label,
+      .demo-card-col .col-label {
+        justify-content: center;
+      }
+      .print-card,
+      .card-note {
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .card-note {
+        text-align: center;
+      }
+      .features-section {
+        padding: 0 16px;
+      }
+    }
+
+    @media (max-width: 419px) {
+      .brand-suffix {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
 
   <!-- TOP NAVIGATION -->
-  <nav class="navbar">
+  <nav class="navbar" aria-label="Main">
     <a href="index.html" class="brand">
       <span class="brand-dot"></span>
-      <span>PropGuide Automator</span>
+      <span>PropGuide<span class="brand-suffix"> Automator</span></span>
     </a>
     <div class="nav-actions">
-      <a href="guide.html" class="btn">Tenant Mobile View</a>
-      <a href="admin.html" class="btn btn-primary">Open PMC Command Center &rarr;</a>
+      <a href="#demo" class="nav-link nav-link-demo js-demo-link">Try the demo</a>
+      <a href="admin.html" class="nav-link">Sign in</a>
+      <a href="admin.html?mode=signup" class="btn btn-primary">Create a guide</a>
     </div>
   </nav>
 
-  <!-- HERO + LIVE QR SANDBOX -->
-  <section class="hero">
+  <!-- HERO -->
+  <header class="hero">
     <div>
-      <div class="eyebrow" id="cloudPill">☁️ Live Multi-Property Onboarding Engine</div>
+      <div class="eyebrow">Move-in guides for property managers</div>
       <h1>
-        Every Property’s Welcome Packet.<br />
-        <span class="gradient-text">One Instant QR Scan.</span>
+        A better welcome.<br />
+        <span class="gradient-text">Fewer repeat questions.</span>
       </h1>
       <p class="hero-sub">
-        Built for multi-property management companies. Customize community hero photography, downloadable PDF onboarding packets, utility checklists, and unit-level Wi-Fi credentials—with zero app store downloads required for incoming residents.
+        Give every resident one place for move-in instructions, utility links, building rules, and unit details. Create a guide for each property, print a QR welcome card for each unit, and update the details anytime.
       </p>
 
       <div class="hero-cta-row">
-        <a href="admin.html" class="btn btn-primary" style="padding: 14px 24px; font-size: 15px;">
-          Launch Property Admin Dashboard &rarr;
+        <a href="admin.html?mode=signup" class="btn btn-primary btn-lg">
+          Create your first property guide &rarr;
         </a>
-        <a href="guide.html?unit=cahill-8-x9f2" target="_blank" id="directUnitBtn" class="btn" style="padding: 14px 20px; font-size: 14px;">
-          Open Fullscreen Tenant Guide ↗
+        <a href="#demo" class="btn btn-lg js-demo-link">
+          Try the interactive demo
         </a>
       </div>
 
-      <!-- INTERACTIVE QR DEMO SWITCHER -->
-      <div class="qr-demo-box">
-        <div id="liveQrCanvas"></div>
-        <div class="qr-demo-info">
-          <label>Scan With Your Phone or Switch Live Community:</label>
-          <select id="demoUnitSelector">
-            <option value="cahill-8-x9f2">Cahill Pond Apartments — Unit 8</option>
-            <option value="cahill-12-k3m9">Cahill Pond Apartments — Unit 12</option>
-            <option value="foundry-402-z7p1">The Foundry Urban Lofts — Loft 402</option>
-          </select>
-          <span style="font-size: 12px; color: var(--text-muted);">
-            Point your smartphone camera at this QR code to open the selected unit's live cloud guide.
-          </span>
-        </div>
-      </div>
+      <ul class="trust-list">
+        <li>No app or login for residents</li>
+        <li>Printable 5×7 QR welcome cards</li>
+        <li>Update details without reprinting</li>
+      </ul>
     </div>
 
-    <!-- LIVE EMBEDDED IFRAME PREVIEW OF GUIDE.HTML -->
-    <div class="phone-showcase">
-      <div class="phone-frame">
-        <iframe id="phoneIframe" src="guide.html?unit=cahill-8-x9f2" title="Live Tenant Mobile Preview"></iframe>
+    <aside class="sample-guide-card" aria-label="Sample resident guide">
+      <div id="sampleQr" aria-hidden="true"></div>
+      <div>
+        <div class="sample-guide-label">See the resident side</div>
+        <p class="sample-guide-text">Scan with your phone to open a full sample resident guide.</p>
+        <a href="guide.html?unit=cahill-8-x9f2" target="_blank" rel="noopener" class="text-link" id="sampleGuideLink">Open the sample guide &#8599;</a>
+      </div>
+    </aside>
+  </header>
+
+  <!-- INTERACTIVE MANAGER DEMO (sample data only — nothing is saved or sent) -->
+  <section class="demo-section" id="demo" aria-labelledby="demoHeading">
+    <div class="demo-panel">
+      <div class="demo-head">
+        <div>
+          <span class="demo-tag">Interactive demo</span>
+          <h2 id="demoHeading">Edit a sample property and see what residents get</h2>
+          <p>Change a few details on the left. The resident guide and the printed welcome card update as you type. Sample data only. Nothing here is saved.</p>
+        </div>
+        <button type="button" class="reset-btn" id="demoResetBtn">Reset demo</button>
+      </div>
+
+      <div class="demo-grid">
+        <!-- 1. MANAGER EDITOR -->
+        <form class="demo-editor" id="demoForm" autocomplete="off" onsubmit="return false;">
+          <div class="col-label"><span class="step-num">1</span>What you manage</div>
+
+          <div class="field">
+            <div class="field-label-row">
+              <label for="demoPropertyName">Property name</label>
+              <span class="char-count" id="demoNameCount" aria-hidden="true"></span>
+            </div>
+            <input type="text" id="demoPropertyName" class="demo-input" maxlength="48" />
+          </div>
+
+          <div class="field">
+            <div class="field-label-row">
+              <label for="demoWelcome">Welcome message</label>
+              <span class="char-count" id="demoWelcomeCount" aria-hidden="true"></span>
+            </div>
+            <textarea id="demoWelcome" class="demo-input" maxlength="220" rows="4"></textarea>
+          </div>
+
+          <fieldset class="field">
+            <legend>Brand color</legend>
+            <div class="swatches">
+              <label class="swatch">
+                <input type="radio" name="demoColor" value="emerald" />
+                <span class="swatch-dot" style="background:#10b981;"></span>
+                <span class="visually-hidden">Emerald</span>
+              </label>
+              <label class="swatch">
+                <input type="radio" name="demoColor" value="sky" />
+                <span class="swatch-dot" style="background:#38bdf8;"></span>
+                <span class="visually-hidden">Sky blue</span>
+              </label>
+              <label class="swatch">
+                <input type="radio" name="demoColor" value="amber" />
+                <span class="swatch-dot" style="background:#f59e0b;"></span>
+                <span class="visually-hidden">Amber</span>
+              </label>
+              <label class="swatch">
+                <input type="radio" name="demoColor" value="violet" />
+                <span class="swatch-dot" style="background:#a78bfa;"></span>
+                <span class="visually-hidden">Violet</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="field">
+            <legend>Cover photo</legend>
+            <div class="photos">
+              <label class="photo-option">
+                <input type="radio" name="demoPhoto" value="apartments" />
+                <span class="photo-thumb" data-photo="apartments"></span>
+                <span class="photo-caption">Apartments</span>
+              </label>
+              <label class="photo-option">
+                <input type="radio" name="demoPhoto" value="modern" />
+                <span class="photo-thumb" data-photo="modern"></span>
+                <span class="photo-caption">Modern</span>
+              </label>
+              <label class="photo-option">
+                <input type="radio" name="demoPhoto" value="poolside" />
+                <span class="photo-thumb" data-photo="poolside"></span>
+                <span class="photo-caption">Poolside</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="demo-cta">
+            <span>Ready to set up a real property?</span>
+            <a href="admin.html?mode=signup" class="btn btn-primary">Create your first property guide &rarr;</a>
+          </div>
+        </form>
+
+        <!-- 2. RESIDENT PHONE PREVIEW -->
+        <div class="demo-phone-col">
+          <div class="col-label"><span class="step-num">2</span>What residents see</div>
+          <div class="phone" id="demoPhone" role="region" aria-label="Resident guide preview">
+            <div class="phone-scroll">
+              <div class="g-hero" id="previewHero">
+                <div class="g-hero-content">
+                  <span class="g-badge">Managed by Summit Peak Management</span>
+                  <div class="g-title" id="previewTitle"></div>
+                  <span class="g-unit">Welcome to Unit 8</span>
+                </div>
+              </div>
+
+              <div class="g-body">
+                <div class="g-card">
+                  <div class="g-card-title">Welcome home</div>
+                  <p class="g-text" id="previewWelcome"></p>
+                </div>
+
+                <div class="g-card">
+                  <div class="g-card-title">Unit Wi-Fi</div>
+                  <div class="g-wifi-grid">
+                    <div class="g-box">
+                      <span class="g-box-label">Network</span>
+                      <span class="g-box-value" id="previewSsid"></span>
+                    </div>
+                    <div class="g-box">
+                      <span class="g-box-label">Password</span>
+                      <span class="g-box-value" id="previewPass"></span>
+                    </div>
+                  </div>
+                  <button type="button" class="g-btn" id="previewCopyBtn">Copy Wi-Fi password</button>
+                </div>
+
+                <div class="g-card">
+                  <div class="g-card-title">Move-in checklist</div>
+                  <label class="g-check"><input type="checkbox" /><span>Set up electricity in your name</span></label>
+                  <label class="g-check"><input type="checkbox" /><span>Pick up mailbox and amenity keys</span></label>
+                  <label class="g-check"><input type="checkbox" /><span>Register your vehicle for parking</span></label>
+                </div>
+
+                <div class="g-card">
+                  <div class="g-card-title">Community policies</div>
+                  <details class="g-rule">
+                    <summary>Quiet hours</summary>
+                    <p>10 PM to 7 AM daily. Please keep music and gatherings low.</p>
+                  </details>
+                  <details class="g-rule">
+                    <summary>Trash and recycling</summary>
+                    <p>Bins are behind Building B. Pickup is Tuesday and Friday mornings.</p>
+                  </details>
+                  <details class="g-rule">
+                    <summary>Maintenance requests</summary>
+                    <p>Submit non-emergency requests through the resident portal.</p>
+                  </details>
+                </div>
+              </div>
+
+              <div class="g-footer">Summit Peak Management • Digital resident guide</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. PRINTED WELCOME CARD PREVIEW -->
+        <div class="demo-card-col">
+          <div class="col-label"><span class="step-num">3</span>What you print</div>
+          <div class="print-card" id="demoPrintCard" role="img" aria-label="Printable 5 by 7 welcome card preview">
+            <div class="pc-hero" id="cardHero">
+              <div class="pc-hero-text">
+                <div class="pc-title" id="cardTitle"></div>
+                <div class="pc-unit">Unit 8</div>
+              </div>
+            </div>
+            <div class="pc-body">
+              <div class="pc-scan">Scan to open your welcome guide</div>
+              <div id="cardQr"></div>
+              <div class="pc-wifi">Wi-Fi: <strong id="cardSsid"></strong></div>
+            </div>
+          </div>
+          <p class="card-note">Print once per unit. Guide edits show up without reprinting the card.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -437,68 +1302,182 @@
 
   <script>
     // =========================================================================
-    // SUPABASE CONFIGURATION (Your URL is pre-filled; paste your Publishable Key)
+    // LANDING PAGE DEMO
+    // Uses fixed sample data only. It does not read from or write to Supabase,
+    // and every value shown in the preview is set with textContent.
     // =========================================================================
-    const SUPABASE_URL = "https://csiwbnosdxnwpdlqydkl.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_g6EY_Po3DPPMgnHsO0gdmg_hdMmw1y3";
+    (function () {
+      'use strict';
 
-    const isCloudConfigured =
-      SUPABASE_URL.startsWith("https://") &&
-      !SUPABASE_ANON_KEY.includes("YOUR_SUPABASE") &&
-      SUPABASE_ANON_KEY.length > 15;
+      const SAMPLE_GUIDE_PATH = 'guide.html?unit=cahill-8-x9f2';
+      const SAMPLE_WIFI_PASSWORD = 'Welcome8Home';
 
-    const supabaseClient = isCloudConfigured
-      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-      : null;
+      const COLORS = {
+        emerald: '#10b981',
+        sky: '#38bdf8',
+        amber: '#f59e0b',
+        violet: '#a78bfa'
+      };
 
-    const selector = document.getElementById('demoUnitSelector');
-    const iframe = document.getElementById('phoneIframe');
-    const directBtn = document.getElementById('directUnitBtn');
-    const qrContainer = document.getElementById('liveQrCanvas');
+      const PHOTO_BASE = {
+        apartments: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00',
+        modern: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750',
+        poolside: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6'
+      };
 
-    function updatePreviewAndQr(slug) {
-      const relativeUrl = `guide.html?unit=${slug}`;
-      iframe.src = relativeUrl;
-      directBtn.href = relativeUrl;
+      const DEFAULTS = {
+        propertyName: 'Cahill Pond Apartments',
+        welcome: 'Welcome home! Your Wi-Fi details, move-in checklist, and community policies are all here. Save this page so you can find it anytime.',
+        color: 'emerald',
+        photo: 'apartments'
+      };
 
-      const basePath = window.location.href.replace(/index\.html.*$/, '').replace(/\/$/, '');
-      const fullQrUrl = `${basePath}/guide.html?unit=${slug}`;
+      const nameInput = document.getElementById('demoPropertyName');
+      const welcomeInput = document.getElementById('demoWelcome');
+      const nameCount = document.getElementById('demoNameCount');
+      const welcomeCount = document.getElementById('demoWelcomeCount');
+      const phone = document.getElementById('demoPhone');
+      const printCard = document.getElementById('demoPrintCard');
+      const previewHero = document.getElementById('previewHero');
+      const previewTitle = document.getElementById('previewTitle');
+      const previewWelcome = document.getElementById('previewWelcome');
+      const previewSsid = document.getElementById('previewSsid');
+      const previewPass = document.getElementById('previewPass');
+      const copyBtn = document.getElementById('previewCopyBtn');
+      const cardHero = document.getElementById('cardHero');
+      const cardTitle = document.getElementById('cardTitle');
+      const cardSsid = document.getElementById('cardSsid');
 
-      qrContainer.innerHTML = '';
-      new QRCode(qrContainer, {
-        text: fullQrUrl,
-        width: 116,
-        height: 116,
-        colorDark: "#020617",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.M
+      function photoUrl(key, width) {
+        return PHOTO_BASE[key] + '?auto=format&fit=crop&w=' + width + '&q=80';
+      }
+
+      function checkedValue(name) {
+        const el = document.querySelector('input[name="' + name + '"]:checked');
+        return el ? el.value : null;
+      }
+
+      function setChecked(name, value) {
+        document.querySelectorAll('input[name="' + name + '"]').forEach(function (el) {
+          el.checked = el.value === value;
+        });
+      }
+
+      function wifiNameFrom(propertyName) {
+        const base = propertyName
+          .split(/\s+/)
+          .slice(0, 2)
+          .map(function (word) { return word.replace(/[^A-Za-z0-9]/g, ''); })
+          .join('')
+          .slice(0, 16);
+        return (base || 'Resident') + '_Unit8';
+      }
+
+      function render() {
+        const rawName = nameInput.value.trim();
+        const rawWelcome = welcomeInput.value.trim();
+        const title = rawName || 'Your property name';
+
+        previewTitle.textContent = title;
+        cardTitle.textContent = title;
+        previewWelcome.textContent = rawWelcome || 'Your welcome message appears here.';
+
+        const ssid = wifiNameFrom(rawName);
+        previewSsid.textContent = ssid;
+        cardSsid.textContent = ssid;
+        previewPass.textContent = SAMPLE_WIFI_PASSWORD;
+
+        nameCount.textContent = nameInput.value.length + '/' + nameInput.maxLength;
+        welcomeCount.textContent = welcomeInput.value.length + '/' + welcomeInput.maxLength;
+
+        const colorKey = checkedValue('demoColor');
+        const accent = COLORS[colorKey] || COLORS[DEFAULTS.color];
+        phone.style.setProperty('--g-accent', accent);
+        printCard.style.setProperty('--g-accent', accent);
+
+        const photoKey = PHOTO_BASE[checkedValue('demoPhoto')] ? checkedValue('demoPhoto') : DEFAULTS.photo;
+        previewHero.style.backgroundImage = 'url("' + photoUrl(photoKey, 700) + '")';
+        cardHero.style.backgroundImage = 'url("' + photoUrl(photoKey, 600) + '")';
+      }
+
+      function resetDemo() {
+        nameInput.value = DEFAULTS.propertyName;
+        welcomeInput.value = DEFAULTS.welcome;
+        setChecked('demoColor', DEFAULTS.color);
+        setChecked('demoPhoto', DEFAULTS.photo);
+        phone.querySelectorAll('input[type="checkbox"]').forEach(function (box) { box.checked = false; });
+        phone.querySelectorAll('details').forEach(function (d) { d.open = false; });
+        copyBtn.textContent = 'Copy Wi-Fi password';
+        render();
+      }
+
+      // Cover photo thumbnails (fixed allowlist above)
+      document.querySelectorAll('.photo-thumb').forEach(function (thumb) {
+        const key = thumb.getAttribute('data-photo');
+        if (PHOTO_BASE[key]) {
+          thumb.style.backgroundImage = 'url("' + photoUrl(key, 240) + '")';
+        }
       });
-    }
 
-    async function loadLiveUnitsFromSupabase() {
-      if (!supabaseClient) {
-        updatePreviewAndQr(selector.value);
-        return;
+      nameInput.addEventListener('input', render);
+      welcomeInput.addEventListener('input', render);
+      document.querySelectorAll('input[name="demoColor"], input[name="demoPhoto"]').forEach(function (el) {
+        el.addEventListener('change', render);
+      });
+      document.getElementById('demoResetBtn').addEventListener('click', resetDemo);
+
+      let copyResetTimer = null;
+      copyBtn.addEventListener('click', async function () {
+        let copied = false;
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(SAMPLE_WIFI_PASSWORD);
+            copied = true;
+          }
+        } catch (err) {
+          copied = false;
+        }
+        copyBtn.textContent = copied ? '✓ Password copied' : 'Copy unavailable in this browser';
+        clearTimeout(copyResetTimer);
+        copyResetTimer = setTimeout(function () {
+          copyBtn.textContent = 'Copy Wi-Fi password';
+        }, 2200);
+      });
+
+      // "Try the demo" links: scroll to the demo, then put the cursor in the first field
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      document.querySelectorAll('.js-demo-link').forEach(function (link) {
+        link.addEventListener('click', function (event) {
+          event.preventDefault();
+          document.getElementById('demo').scrollIntoView({
+            behavior: prefersReducedMotion ? 'auto' : 'smooth',
+            block: 'start'
+          });
+          nameInput.focus({ preventScroll: true });
+        });
+      });
+
+      // QR codes for the sample resident guide
+      const sampleGuideUrl = new URL(SAMPLE_GUIDE_PATH, window.location.href).href;
+
+      function drawQr(containerId, size) {
+        const container = document.getElementById(containerId);
+        if (!container || typeof QRCode === 'undefined') return;
+        container.textContent = '';
+        new QRCode(container, {
+          text: sampleGuideUrl,
+          width: size,
+          height: size,
+          colorDark: '#020617',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
       }
 
-      const { data: unitsData, error } = await supabaseClient
-        .from('units')
-        .select('unit_number, slug_token, properties(property_name)');
-
-      if (!error && unitsData && unitsData.length > 0) {
-        selector.innerHTML = unitsData.map(u =>
-          `<option value="${u.slug_token}">${u.properties?.property_name || 'Property'} — ${u.unit_number}</option>`
-        ).join('');
-      }
-
-      updatePreviewAndQr(selector.value);
-    }
-
-    selector.addEventListener('change', (e) => {
-      updatePreviewAndQr(e.target.value);
-    });
-
-    loadLiveUnitsFromSupabase();
+      drawQr('sampleQr', 132);
+      drawQr('cardQr', 104);
+      resetDemo();
+    })();
   </script>
 </body>
 </html>
