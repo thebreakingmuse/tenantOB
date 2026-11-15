@@ -1933,6 +1933,11 @@
       await loadPortfolioData();
     }
 
+    // Landing page "Create your first property guide" links use admin.html?mode=signup
+    if (new URLSearchParams(window.location.search).get('mode') === 'signup') {
+      switchAuthMode('signup');
+    }
+
     initApp();
   </script>
 </body>
