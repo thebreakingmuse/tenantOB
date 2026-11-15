@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PMC Onboarding Command Center — Cloud Admin</title>
+  <title>PMC Onboarding Command Center — Multi-Tenant Cloud Admin</title>
   <!-- Supabase JS v2 CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- QR Code Generator -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     :root {
-      --bg-workspace: #1e293b; /* Lightened slate background */
-      --panel-bg: #334155;    /* Elevated panel contrast */
-      --card-bg: #475569;     /* Lighter card fill */
-      --border-subtle: #64748b; /* Sharp border contrast */
+      --bg-workspace: #1e293b;
+      --panel-bg: #334155;
+      --card-bg: #475569;
+      --border-subtle: #64748b;
       --text-primary: #f8fafc;
       --text-secondary: #cbd5e1;
       --brand-accent: #10b981;
@@ -34,6 +34,183 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+    }
+
+    /* AUTHENTICATION LOGIN / SIGNUP GATE OVERLAY */
+    .auth-gate-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
+    }
+
+    .auth-gate-backdrop.hidden {
+      display: none;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 430px;
+      background: #1e293b;
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75), 0 0 30px var(--brand-glow);
+      text-align: center;
+    }
+
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: #0f172a;
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 20px;
+    }
+
+    .auth-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      padding: 9px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .auth-tab.active {
+      background: var(--brand-accent);
+      color: #020617;
+    }
+
+    .auth-card h2 {
+      font-size: 21px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      color: #fff;
+    }
+
+    .auth-card p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .auth-input {
+      width: 100%;
+      background: #0f172a;
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .auth-input:focus {
+      border-color: var(--brand-accent);
+      box-shadow: 0 0 0 2px var(--brand-glow);
+    }
+
+    .auth-submit-btn {
+      width: 100%;
+      background: var(--brand-accent);
+      color: #020617;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+
+    .auth-error {
+      display: none;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid #ef4444;
+      color: #fca5a5;
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 18px 0 14px;
+      color: #94a3b8;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: rgba(100, 116, 139, 0.4);
+    }
+
+    .sandbox-btn {
+      width: 100%;
+      background: #0f172a;
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .sandbox-btn:hover {
+      border-color: var(--brand-accent);
+    }
+
+    .back-home-link {
+      display: inline-block;
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-decoration: none;
+    }
+
+    /* READ-ONLY SANDBOX BANNER */
+    .sandbox-banner {
+      display: none;
+      background: linear-gradient(90deg, #312e81, #1e1b4b);
+      border-bottom: 1px solid #6366f1;
+      padding: 8px 20px;
+      font-size: 12px;
+      color: #e0e7ff;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .sandbox-banner.active {
+      display: flex;
     }
 
     /* TOP NAVIGATION BAR */
@@ -152,7 +329,14 @@
       font-weight: 700;
     }
 
-    /* MOBILE VIEW SWITCHER BAR (Hidden on Desktop, Shown on Mobile/Tablet) */
+    .btn-locked {
+      background: #334155 !important;
+      color: #94a3b8 !important;
+      border-color: #475569 !important;
+      cursor: not-allowed;
+    }
+
+    /* MOBILE VIEW SWITCHER BAR */
     .mobile-view-bar {
       display: none;
       background: #0f172a;
@@ -176,17 +360,14 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      transition: all 0.2s;
     }
 
     .view-tab-btn.active {
       background: var(--brand-accent);
       color: #020617;
       border-color: var(--brand-accent);
-      box-shadow: 0 0 12px var(--brand-glow);
     }
 
-    /* FLOATING BOTTOM ARROW SWITCHER ON MOBILE */
     .mobile-floating-switch {
       display: none;
       position: fixed;
@@ -207,13 +388,9 @@
       font-weight: 800;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
     }
 
-    /* MAIN WORKSPACE (Split Screen on Desktop) */
+    /* MAIN WORKSPACE */
     .workspace {
       display: grid;
       grid-template-columns: 1fr 470px;
@@ -656,79 +833,27 @@
       font-size: 13px;
     }
 
-    /* =========================================================================
-       MOBILE & TABLET RESPONSIVE LAYOUT (<= 960px)
-       ========================================================================= */
     @media (max-width: 960px) {
       body {
         height: auto;
         min-height: 100vh;
         overflow-y: auto;
-        padding-bottom: 76px; /* Space for floating bottom arrow button */
+        padding-bottom: 76px;
       }
 
-      .divider-v {
-        display: none;
-      }
-
-      .topbar {
-        padding: 12px 14px;
-      }
-
-      .topbar-left {
-        width: 100%;
-        justify-content: space-between;
-      }
-
-      .selector-group {
-        flex: 1;
-        min-width: 140px;
-      }
-
-      .selector-group select {
-        flex: 1;
-        width: 100%;
-      }
-
-      .mobile-view-bar {
-        display: flex;
-        position: sticky;
-        top: 0;
-        z-index: 80;
-      }
-
-      .mobile-floating-switch {
-        display: block;
-      }
-
-      .workspace {
-        display: block;
-        overflow: visible;
-      }
-
-      .editor-pane {
-        border-right: none;
-        padding: 14px;
-        overflow: visible;
-      }
-
-      .preview-pane {
-        padding: 16px 12px;
-        overflow: visible;
-      }
-
-      /* Toggle visibility based on mobile mode class on .workspace */
-      .workspace.mobile-mode-editor .preview-pane {
-        display: none;
-      }
-
-      .workspace.mobile-mode-preview .editor-pane {
-        display: none;
-      }
-
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
+      .divider-v { display: none; }
+      .topbar { padding: 12px 14px; }
+      .topbar-left { width: 100%; justify-content: space-between; }
+      .selector-group { flex: 1; min-width: 140px; }
+      .selector-group select { flex: 1; width: 100%; }
+      .mobile-view-bar { display: flex; position: sticky; top: 0; z-index: 80; }
+      .mobile-floating-switch { display: block; }
+      .workspace { display: block; overflow: visible; }
+      .editor-pane { border-right: none; padding: 14px; overflow: visible; }
+      .preview-pane { padding: 16px 12px; overflow: visible; }
+      .workspace.mobile-mode-editor .preview-pane { display: none; }
+      .workspace.mobile-mode-preview .editor-pane { display: none; }
+      .form-grid { grid-template-columns: 1fr; }
     }
 
     @media print {
@@ -740,6 +865,52 @@
   </style>
 </head>
 <body>
+
+  <!-- =========================================================================
+       MULTI-TENANT MANAGER SIGN-IN & REGISTRATION MODAL
+       ========================================================================= -->
+  <div class="auth-gate-backdrop" id="authGateModal">
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button type="button" class="auth-tab active" id="tabSignIn" onclick="switchAuthMode('signin')">Manager Sign In</button>
+        <button type="button" class="auth-tab" id="tabSignUp" onclick="switchAuthMode('signup')">Create PMC Account</button>
+      </div>
+
+      <h2 id="authTitle">Manager Sign In</h2>
+      <p id="authSubtitle">Sign in to load your isolated Property Management portfolio and edit your communities.</p>
+
+      <form class="auth-form" id="loginForm">
+        <div id="companyNameFieldGroup" style="display: none;">
+          <label for="authCompanyInput">Property Management Company Name</label>
+          <input type="text" id="authCompanyInput" class="auth-input" placeholder="e.g., Apex Property Management" />
+        </div>
+        <div>
+          <label for="authEmailInput">Manager Email</label>
+          <input type="email" id="authEmailInput" class="auth-input" placeholder="manager@company.com" required />
+        </div>
+        <div>
+          <label for="authPasswordInput">Password</label>
+          <input type="password" id="authPasswordInput" class="auth-input" placeholder="Minimum 6 characters" required />
+        </div>
+        <div class="auth-error" id="authErrorBox"></div>
+        <button type="submit" class="auth-submit-btn" id="loginSubmitBtn">Sign In to My Portfolio &rarr;</button>
+      </form>
+
+      <div class="auth-divider">Prospective Customers</div>
+
+      <button type="button" class="sandbox-btn" id="enterSandboxBtn">
+        👁️ Preview Demo Portfolio (Read-Only Sandbox)
+      </button>
+
+      <a href="index.html" class="back-home-link">&larr; Return to Public Landing Page</a>
+    </div>
+  </div>
+
+  <!-- READ-ONLY SANDBOX BANNER -->
+  <div class="sandbox-banner" id="sandboxBanner">
+    <span>👀 <strong>Read-Only Prospect Sandbox:</strong> Viewing sample portfolio. Sign in or create a PMC account to manage your own private properties.</span>
+    <button class="btn btn-primary" style="padding: 5px 12px; font-size: 11px;" onclick="openLoginModal()">🔓 Sign In / Register</button>
+  </div>
 
   <header class="topbar">
     <div class="topbar-left">
@@ -769,10 +940,11 @@
       <button class="btn" id="bulkCsvBtn">Import CSV</button>
       <button class="btn btn-save" id="saveCloudBtn">💾 Save Changes</button>
       <button class="btn btn-primary" id="openQrModalBtn">Print QR Card</button>
+      <button class="btn" id="authActionBtn" onclick="handleAuthAction()">🔒 Sign Out</button>
     </div>
   </header>
 
-  <!-- MOBILE VIEW SWITCHER BAR (Shown on Phones & Tablets) -->
+  <!-- MOBILE VIEW SWITCHER BAR -->
   <nav class="mobile-view-bar">
     <button class="view-tab-btn active" id="tabEditorBtn" onclick="setMobileView('editor')">
       ⚙ 1. PMC Editor Dashboard
@@ -782,7 +954,7 @@
     </button>
   </nav>
 
-  <!-- MAIN WORKSPACE (Defaults to mobile-mode-editor on phones, split screen on desktop) -->
+  <!-- MAIN WORKSPACE -->
   <main class="workspace mobile-mode-editor" id="mainWorkspace">
 
     <section class="editor-pane">
@@ -953,10 +1125,13 @@
 
   <script>
     // =========================================================================
-    // SUPABASE CONFIGURATION (Your URL is pre-filled; paste your Publishable Key)
+    // SUPABASE CONFIGURATION
     // =========================================================================
     const SUPABASE_URL = "https://csiwbnosdxnwpdlqydkl.supabase.co";
-    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_PUBLIC_KEY";
+    const SUPABASE_ANON_KEY = "sb_publishable_g6EY_Po3DPPMgnHsO0gdmg_hdMmw1y3";
+
+    // Optional Master Key for quick local testing
+    const MASTER_ACCESS_KEY = "PropGuide2026!";
 
     const isCloudConfigured =
       SUPABASE_URL.startsWith("https://") &&
@@ -967,7 +1142,164 @@
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
       : null;
 
-    // MOBILE VIEW TOGGLE LOGIC (Editor <-> Tenant Preview)
+    // MULTI-TENANT AUTH STATE
+    let authMode = 'signin'; // 'signin' | 'signup'
+    let currentUser = null;
+    let isAuthorizedManager = false;
+    let isReadOnlySandbox = false;
+
+    const authGateModal = document.getElementById('authGateModal');
+    const sandboxBanner = document.getElementById('sandboxBanner');
+    const saveCloudBtn = document.getElementById('saveCloudBtn');
+    const authActionBtn = document.getElementById('authActionBtn');
+    const authErrorBox = document.getElementById('authErrorBox');
+
+    window.switchAuthMode = function(mode) {
+      authMode = mode;
+      authErrorBox.style.display = 'none';
+      const tabSignIn = document.getElementById('tabSignIn');
+      const tabSignUp = document.getElementById('tabSignUp');
+      const companyGroup = document.getElementById('companyNameFieldGroup');
+      const title = document.getElementById('authTitle');
+      const subtitle = document.getElementById('authSubtitle');
+      const submitBtn = document.getElementById('loginSubmitBtn');
+
+      if (mode === 'signup') {
+        tabSignUp.classList.add('active');
+        tabSignIn.classList.remove('active');
+        companyGroup.style.display = 'block';
+        title.textContent = 'Create Your PMC Workspace';
+        subtitle.textContent = 'Register your Property Management Company to get your own isolated properties and QR guides.';
+        submitBtn.textContent = 'Create PMC Portfolio →';
+      } else {
+        tabSignIn.classList.add('active');
+        tabSignUp.classList.remove('active');
+        companyGroup.style.display = 'none';
+        title.textContent = 'Manager Sign In';
+        subtitle.textContent = 'Sign in to load your isolated Property Management portfolio and edit your communities.';
+        submitBtn.textContent = 'Sign In to My Portfolio →';
+      }
+    };
+
+    function applyAuthUIState() {
+      if (isAuthorizedManager) {
+        authGateModal.classList.add('hidden');
+        sandboxBanner.classList.remove('active');
+        saveCloudBtn.classList.remove('btn-locked');
+        saveCloudBtn.textContent = "💾 Save Changes";
+        authActionBtn.textContent = "🔒 Sign Out";
+      } else if (isReadOnlySandbox) {
+        authGateModal.classList.add('hidden');
+        sandboxBanner.classList.add('active');
+        saveCloudBtn.classList.add('btn-locked');
+        saveCloudBtn.textContent = "🔒 Cloud Save Locked (Demo)";
+        authActionBtn.textContent = "🔓 Manager Login";
+      } else {
+        authGateModal.classList.remove('hidden');
+      }
+    }
+
+    window.openLoginModal = function() {
+      authErrorBox.style.display = 'none';
+      authGateModal.classList.remove('hidden');
+    };
+
+    window.handleAuthAction = async function() {
+      if (isAuthorizedManager) {
+        if (supabaseClient) await supabaseClient.auth.signOut();
+        sessionStorage.removeItem('pmc_authorized_session');
+        currentUser = null;
+        isAuthorizedManager = false;
+        isReadOnlySandbox = false;
+        applyAuthUIState();
+      } else {
+        openLoginModal();
+      }
+    };
+
+    // HANDLE SIGN IN OR SIGN UP FORM
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      authErrorBox.style.display = 'none';
+      const email = document.getElementById('authEmailInput').value.trim();
+      const pass = document.getElementById('authPasswordInput').value;
+      const companyName = document.getElementById('authCompanyInput').value.trim() || "My Property Management";
+      const submitBtn = document.getElementById('loginSubmitBtn');
+      submitBtn.textContent = "Connecting...";
+
+      // Master key fallback for instant local/demo testing
+      if (authMode === 'signin' && pass === MASTER_ACCESS_KEY) {
+        isAuthorizedManager = true;
+        isReadOnlySandbox = false;
+        sessionStorage.setItem('pmc_authorized_session', 'true');
+        applyAuthUIState();
+        await loadPortfolioData();
+        return;
+      }
+
+      if (!supabaseClient) {
+        authErrorBox.textContent = "Paste your Supabase Publishable Key in admin.html to use live multi-company accounts.";
+        authErrorBox.style.display = 'block';
+        submitBtn.textContent = authMode === 'signup' ? 'Create PMC Portfolio →' : 'Sign In to My Portfolio →';
+        return;
+      }
+
+      if (authMode === 'signup') {
+        const { data, error } = await supabaseClient.auth.signUp({
+          email,
+          password: pass,
+          options: {
+            data: { company_name: companyName }
+          }
+        });
+
+        if (error) {
+          authErrorBox.textContent = error.message;
+          authErrorBox.style.display = 'block';
+        } else if (data.user) {
+          currentUser = data.user;
+          isAuthorizedManager = true;
+          isReadOnlySandbox = false;
+          applyAuthUIState();
+          await loadPortfolioData();
+        }
+      } else {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email,
+          password: pass
+        });
+
+        if (error) {
+          authErrorBox.textContent = error.message;
+          authErrorBox.style.display = 'block';
+        } else if (data.user) {
+          currentUser = data.user;
+          isAuthorizedManager = true;
+          isReadOnlySandbox = false;
+          applyAuthUIState();
+          await loadPortfolioData();
+        }
+      }
+
+      submitBtn.textContent = authMode === 'signup' ? 'Create PMC Portfolio →' : 'Sign In to My Portfolio →';
+    });
+
+    document.getElementById('enterSandboxBtn').addEventListener('click', async () => {
+      currentUser = null;
+      isAuthorizedManager = false;
+      isReadOnlySandbox = true;
+      applyAuthUIState();
+      await loadPortfolioData();
+    });
+
+    function requireManagerAuth(actionName) {
+      if (isAuthorizedManager) return true;
+      const proceed = confirm(`🔒 "${actionName}" requires a signed-in PMC account.\n\nWould you like to sign in or create your own PMC account now?`);
+      if (proceed) openLoginModal();
+      return false;
+    }
+
+    // MOBILE VIEW TOGGLE LOGIC
     let currentMobileMode = 'editor';
 
     window.setMobileView = function(mode) {
@@ -997,7 +1329,8 @@
       setMobileView(currentMobileMode === 'editor' ? 'preview' : 'editor');
     };
 
-    let portfolioState = {
+    // DEFAULT DEMO PORTFOLIO (Shown in Read-Only Prospect Sandbox)
+    const DEMO_PORTFOLIO = {
       company_id: null,
       company_name: "Summit Peak Property Management",
       activePropertyKey: "cahill",
@@ -1009,52 +1342,27 @@
           property_name: "Cahill Pond Apartments",
           accent_color: "#10b981",
           hero_image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=900&q=80",
-          welcome_message: "Welcome to Cahill Pond! Enjoy our quiet pondside trails, community garden plots, and renovated clubhouse. Below you'll find your unit access details and downloadable Cahill Pond welcome packet.",
+          welcome_message: "Welcome to Cahill Pond! Enjoy our quiet pondside trails, community garden plots, and renovated clubhouse.",
           onboarding_packets: [
             { title: "Cahill Pond Welcome Packet & Trail Map.pdf", meta: "PDF • 2.4 MB", url: "#" },
             { title: "Clubhouse & Pond Amenity Rules.pdf", meta: "PDF • 850 KB", url: "#" }
           ],
           utilities: [
             { name: "Set up Colorado Springs Utilities (Electric/Water)", url: "https://www.csu.org" },
-            { name: "Upload Renter's Insurance Certificate", url: "#insurance" },
-            { name: "Register Vehicle for Cahill Surface Lot Pass", url: "#parking" }
+            { name: "Upload Renter's Insurance Certificate", url: "#insurance" }
           ],
           rules: [
             { title: "Trash & Valet Recycling Schedule", content: "Dumpsters are at the West enclosure. Valet pickup runs Tuesday & Friday at 8:00 AM." },
-            { title: "Pet Policy & Bark Park Hours", content: "Up to 2 pets permitted. The fenced Cahill Bark Park is open dawn to dusk." },
             { title: "24/7 Emergency Maintenance", content: "For active leaks or heating emergencies, call Summit Peak Dispatch at (719) 555-0192." }
           ],
           units: [
-            { db_id: null, unit_number: "Unit 8", slug_token: "cahill-8-x9f2", wifi_ssid: "CahillPond_Unit8_5G", wifi_pass: "PondLife2026!", access_info: "Mailbox #8 (North Kiosk) • Gate Code: #4491" },
-            { db_id: null, unit_number: "Unit 12", slug_token: "cahill-12-k3m9", wifi_ssid: "CahillPond_Unit12_5G", wifi_pass: "TrailView12#", access_info: "Mailbox #12 (North Kiosk) • Gate Code: #4491" }
-          ]
-        },
-        foundry: {
-          db_id: null,
-          id: "foundry",
-          property_name: "The Foundry Urban Lofts",
-          accent_color: "#f59e0b",
-          hero_image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=900&q=80",
-          welcome_message: "Welcome to The Foundry Urban Lofts downtown. Your loft is equipped with gigabit fiber and smart keyfob entry. Review your freight elevator reservation packet and garage instructions below.",
-          onboarding_packets: [
-            { title: "Foundry Lofts Resident Handbook.pdf", meta: "PDF • 3.1 MB", url: "#" },
-            { title: "Freight Elevator & Move-In Dock Rules.pdf", meta: "PDF • 1.1 MB", url: "#" }
-          ],
-          utilities: [
-            { name: "Activate Symmetrical Gigabit Fiber Port", url: "#fiber" },
-            { name: "Register Smartphone NFC Building Keyfob", url: "#nfc" }
-          ],
-          rules: [
-            { title: "Trash Chute & P1 Cardboard Room", content: "Chutes are on every floor. Flatten moving boxes and leave them in the P1 Recycling Room." },
-            { title: "Rooftop Sky Deck Reservations", content: "Open until 11:00 PM nightly. Gas fire pits can be reserved in the resident portal." }
-          ],
-          units: [
-            { db_id: null, unit_number: "Loft 402", slug_token: "foundry-402-z7p1", wifi_ssid: "FoundryFiber_Loft402", wifi_pass: "IronWorks402#", access_info: "Parcel Locker #402 (Lobby) • Elevator PIN: 8820#" }
+            { db_id: null, unit_number: "Unit 8", slug_token: "cahill-8-x9f2", wifi_ssid: "CahillPond_Unit8_5G", wifi_pass: "PondLife2026!", access_info: "Mailbox #8 (North Kiosk) • Gate Code: #4491" }
           ]
         }
       }
     };
 
+    let portfolioState = JSON.parse(JSON.stringify(DEMO_PORTFOLIO));
     const statusBadge = document.getElementById('cloudStatusBadge');
 
     function getActiveProperty() {
@@ -1066,67 +1374,104 @@
       return prop.units[portfolioState.activeUnitIndex] || prop.units[0];
     }
 
+    // MULTI-TENANT PORTFOLIO LOADER (Filters strictly by logged-in owner_user_id)
     async function loadPortfolioData() {
-      if (supabaseClient) {
-        statusBadge.textContent = "☁️ Supabase Connected";
+      if (supabaseClient && currentUser) {
+        statusBadge.textContent = "☁️ Isolated PMC Cloud";
         statusBadge.style.background = "#065f46";
         statusBadge.style.color = "#d1fae5";
         statusBadge.style.borderColor = "#10b981";
 
-        const { data: comp } = await supabaseClient.from('companies').select('*').limit(1).single();
+        // 1. Fetch the company owned by this specific logged-in user
+        let { data: comp } = await supabaseClient
+          .from('companies')
+          .select('*')
+          .eq('owner_user_id', currentUser.id)
+          .maybeSingle();
+
+        // Fallback: If user signed in with an account created before the trigger, claim an unowned company or create one
+        if (!comp) {
+          const { data: unowned } = await supabaseClient
+            .from('companies')
+            .select('*')
+            .is('owner_user_id', null)
+            .limit(1)
+            .maybeSingle();
+
+          if (unowned) {
+            const { data: claimed } = await supabaseClient
+              .from('companies')
+              .update({ owner_user_id: currentUser.id })
+              .eq('id', unowned.id)
+              .select()
+              .single();
+            comp = claimed;
+          } else {
+            const { data: created } = await supabaseClient
+              .from('companies')
+              .insert({ owner_user_id: currentUser.id, company_name: "My Property Management" })
+              .select()
+              .single();
+            comp = created;
+          }
+        }
+
         if (comp) {
           portfolioState.company_id = comp.id;
           portfolioState.company_name = comp.company_name;
-        }
+          document.getElementById('pmcNameDisplay').textContent = comp.company_name;
 
-        const { data: props } = await supabaseClient
-          .from('properties')
-          .select('*, units(*)');
+          // 2. Fetch ONLY properties belonging to this company_id
+          const { data: props } = await supabaseClient
+            .from('properties')
+            .select('*, units(*)')
+            .eq('company_id', comp.id);
 
-        if (props && props.length > 0) {
-          const map = {};
-          props.forEach(p => {
-            map[p.property_key] = {
-              db_id: p.id,
-              id: p.property_key,
-              property_name: p.property_name,
-              accent_color: p.accent_color || "#10b981",
-              hero_image: p.hero_image || "",
-              welcome_message: p.welcome_message || "",
-              onboarding_packets: p.onboarding_packets || [],
-              utilities: p.utilities || [],
-              rules: p.rules || [],
-              units: (p.units || []).map(u => ({
-                db_id: u.id,
-                unit_number: u.unit_number,
-                slug_token: u.slug_token,
-                wifi_ssid: u.wifi_ssid,
-                wifi_pass: u.wifi_pass,
-                access_info: u.access_info
-              }))
-            };
-          });
-          portfolioState.properties = map;
-          portfolioState.activePropertyKey = Object.keys(map)[0];
-          portfolioState.activeUnitIndex = 0;
+          if (props && props.length > 0) {
+            const map = {};
+            props.forEach(p => {
+              map[p.property_key] = {
+                db_id: p.id,
+                id: p.property_key,
+                property_name: p.property_name,
+                accent_color: p.accent_color || "#10b981",
+                hero_image: p.hero_image || "",
+                welcome_message: p.welcome_message || "",
+                onboarding_packets: p.onboarding_packets || [],
+                utilities: p.utilities || [],
+                rules: p.rules || [],
+                units: (p.units && p.units.length > 0) ? p.units.map(u => ({
+                  db_id: u.id,
+                  unit_number: u.unit_number,
+                  slug_token: u.slug_token,
+                  wifi_ssid: u.wifi_ssid,
+                  wifi_pass: u.wifi_pass,
+                  access_info: u.access_info
+                })) : [
+                  { db_id: null, unit_number: "Unit 101", slug_token: `${p.property_key}-101`, wifi_ssid: "Unit101_WiFi", wifi_pass: "Welcome101!", access_info: "Mailbox #101" }
+                ]
+              };
+            });
+            portfolioState.properties = map;
+            portfolioState.activePropertyKey = Object.keys(map)[0];
+            portfolioState.activeUnitIndex = 0;
+          }
         }
       } else {
-        statusBadge.textContent = "⚡ Local Browser Mode";
-        const saved = localStorage.getItem('pmc_portfolio_state');
-        if (saved) {
-          portfolioState = JSON.parse(saved);
-        }
+        statusBadge.textContent = isReadOnlySandbox ? "👁️ Demo Sandbox" : "⚡ Local Mode";
+        document.getElementById('pmcNameDisplay').textContent = portfolioState.company_name;
       }
+
       syncEditorInputs();
     }
 
     async function savePortfolioData() {
+      if (!requireManagerAuth("Saving changes to your live cloud portfolio")) return;
+
       const saveBtn = document.getElementById('saveCloudBtn');
       saveBtn.textContent = "Saving...";
 
-      localStorage.setItem('pmc_portfolio_state', JSON.stringify(portfolioState));
-
-      if (supabaseClient) {
+      if (supabaseClient && portfolioState.company_id) {
         const prop = getActiveProperty();
         const unit = getActiveUnit();
 
@@ -1143,7 +1488,7 @@
             onboarding_packets: prop.onboarding_packets,
             utilities: prop.utilities,
             rules: prop.rules
-          }, { onConflict: 'property_key' })
+          }, { onConflict: 'company_id,property_key' })
           .select()
           .single();
 
@@ -1173,9 +1518,10 @@
     }
 
     async function uploadAssetFile(file) {
-      if (supabaseClient) {
+      if (supabaseClient && isAuthorizedManager) {
         const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const filePath = `${portfolioState.activePropertyKey}/${Date.now()}_${cleanName}`;
+        const folderScope = portfolioState.company_id || 'shared';
+        const filePath = `${folderScope}/${portfolioState.activePropertyKey}/${Date.now()}_${cleanName}`;
         const { error } = await supabaseClient.storage
           .from('property-assets')
           .upload(filePath, file, { upsert: true });
@@ -1196,8 +1542,7 @@
       const prop = getActiveProperty();
       const unit = getActiveUnit();
 
-      localStorage.setItem('pmc_portfolio_state', JSON.stringify(portfolioState));
-
+      document.getElementById('pmcNameDisplay').textContent = portfolioState.company_name;
       document.documentElement.style.setProperty('--brand-accent', prop.accent_color);
       document.documentElement.style.setProperty('--brand-glow', prop.accent_color + '33');
 
@@ -1254,8 +1599,6 @@
     function renderMobilePreview() {
       const prop = getActiveProperty();
       const unit = getActiveUnit();
-
-      localStorage.setItem('pmc_portfolio_state', JSON.stringify(portfolioState));
 
       const linkEl = document.getElementById('liveUrlPreview');
       linkEl.textContent = `guide.html?unit=${unit.slug_token} ↗`;
@@ -1373,6 +1716,7 @@
     });
 
     document.getElementById('propHeroFileInput').addEventListener('change', async (e) => {
+      if (!requireManagerAuth("Uploading Hero Photos")) return;
       const file = e.target.files[0];
       if (!file) return;
       const btnText = document.getElementById('heroUploadBtnText');
@@ -1411,6 +1755,7 @@
     });
 
     document.getElementById('newPacketFile').addEventListener('change', async (e) => {
+      if (!requireManagerAuth("Uploading PDF Onboarding Packets")) return;
       const file = e.target.files[0];
       if (!file) return;
       const btnText = document.getElementById('pdfUploadBtnText');
@@ -1432,6 +1777,7 @@
     });
 
     window.removePacket = (idx) => {
+      if (!requireManagerAuth("Removing Documents")) return;
       getActiveProperty().onboarding_packets.splice(idx, 1);
       syncEditorInputs();
     };
@@ -1467,6 +1813,7 @@
     };
 
     document.getElementById('addPropertyBtn').addEventListener('click', async () => {
+      if (!requireManagerAuth("Creating a New Property")) return;
       const name = prompt("Enter New Property / Community Name:", "Pine Creek Townhomes");
       if (!name) return;
       const key = name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10) + '_' + Math.floor(Math.random() * 90 + 10);
@@ -1484,7 +1831,7 @@
           {
             db_id: null,
             unit_number: "Unit 101",
-            slug_token: `${key}-101`,
+            slug_token: `${key}-101-${Math.random().toString(36).substring(2, 5)}`,
             wifi_ssid: `${name.replace(/\s+/g, '')}_101`,
             wifi_pass: "WelcomeHome101!",
             access_info: "Mailbox #101 • Front Door Smart Lock"
@@ -1498,6 +1845,7 @@
     });
 
     document.getElementById('addUnitBtn').addEventListener('click', async () => {
+      if (!requireManagerAuth("Adding a New Unit")) return;
       const unitNum = prompt("Enter Unit Number (e.g., Unit 14):", "Unit 14");
       if (!unitNum) return;
       const prop = getActiveProperty();
@@ -1516,6 +1864,7 @@
     });
 
     document.getElementById('bulkCsvBtn').addEventListener('click', async () => {
+      if (!requireManagerAuth("Importing a Bulk CSV Roster")) return;
       const sample = "Unit 201,Cahill_201_5G,Pass201!,Mailbox #201\nUnit 202,Cahill_202_5G,Pass202!,Mailbox #202";
       const raw = prompt("Paste CSV rows (Unit Number, Wi-Fi SSID, Wi-Fi Password, Access Note):", sample);
       if (!raw) return;
@@ -1571,7 +1920,20 @@
       document.getElementById('qrModal').classList.remove('active');
     });
 
-    loadPortfolioData();
+    // INITIALIZE SESSION CHECK ON PAGE LOAD
+    async function initApp() {
+      if (supabaseClient) {
+        const { data } = await supabaseClient.auth.getSession();
+        if (data && data.session) {
+          currentUser = data.session.user;
+          isAuthorizedManager = true;
+          applyAuthUIState();
+        }
+      }
+      await loadPortfolioData();
+    }
+
+    initApp();
   </script>
 </body>
 </html>
