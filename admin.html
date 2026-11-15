@@ -10,12 +10,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     :root {
-      --bg-workspace: #090d16;
-      --panel-bg: #111827;
-      --card-bg: #1e293b;
-      --border-subtle: #334155;
+      --bg-workspace: #1e293b; /* Lightened slate background */
+      --panel-bg: #334155;    /* Elevated panel contrast */
+      --card-bg: #475569;     /* Lighter card fill */
+      --border-subtle: #64748b; /* Sharp border contrast */
       --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
+      --text-secondary: #cbd5e1;
       --brand-accent: #10b981;
       --brand-glow: rgba(16, 185, 129, 0.25);
     }
@@ -36,21 +36,25 @@
       overflow: hidden;
     }
 
+    /* TOP NAVIGATION BAR */
     .topbar {
-      height: 64px;
+      min-height: 64px;
       background: #0f172a;
       border-bottom: 1px solid var(--border-subtle);
-      padding: 0 20px;
+      padding: 10px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
       flex-shrink: 0;
     }
 
     .topbar-left {
       display: flex;
       align-items: center;
-      gap: 12px;
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
     .pmc-brand {
@@ -60,6 +64,7 @@
       font-weight: 800;
       font-size: 14px;
       color: #fff;
+      text-decoration: none;
     }
 
     .pmc-dot {
@@ -68,6 +73,7 @@
       border-radius: 50%;
       background: var(--brand-accent);
       box-shadow: 0 0 10px var(--brand-accent);
+      flex-shrink: 0;
     }
 
     .cloud-status {
@@ -78,6 +84,7 @@
       background: #1e1b4b;
       color: #a5b4fc;
       border: 1px solid #4338ca;
+      white-space: nowrap;
     }
 
     .divider-v {
@@ -95,7 +102,7 @@
     }
 
     select, input[type="text"], textarea {
-      background: #090d16;
+      background: #0f172a;
       color: var(--text-primary);
       border: 1px solid var(--border-subtle);
       border-radius: 8px;
@@ -120,8 +127,10 @@
       cursor: pointer;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
       transition: all 0.15s;
+      white-space: nowrap;
     }
 
     .btn:hover {
@@ -143,6 +152,68 @@
       font-weight: 700;
     }
 
+    /* MOBILE VIEW SWITCHER BAR (Hidden on Desktop, Shown on Mobile/Tablet) */
+    .mobile-view-bar {
+      display: none;
+      background: #0f172a;
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 8px 14px;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .view-tab-btn {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      background: #1e293b;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .view-tab-btn.active {
+      background: var(--brand-accent);
+      color: #020617;
+      border-color: var(--brand-accent);
+      box-shadow: 0 0 12px var(--brand-glow);
+    }
+
+    /* FLOATING BOTTOM ARROW SWITCHER ON MOBILE */
+    .mobile-floating-switch {
+      display: none;
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      left: 16px;
+      z-index: 90;
+    }
+
+    .floating-switch-btn {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 999px;
+      background: var(--brand-accent);
+      color: #020617;
+      border: 2px solid #0f172a;
+      font-size: 14px;
+      font-weight: 800;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    /* MAIN WORKSPACE (Split Screen on Desktop) */
     .workspace {
       display: grid;
       grid-template-columns: 1fr 470px;
@@ -164,16 +235,18 @@
       border: 1px solid var(--border-subtle);
       border-radius: 12px;
       padding: 18px;
-      box-shadow: 0 0 18px rgba(0, 0, 0, 0.35), 0 0 1px var(--brand-glow);
+      box-shadow: 0 0 18px rgba(0, 0, 0, 0.25), 0 0 1px var(--brand-glow);
     }
 
     .section-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
       margin-bottom: 14px;
       padding-bottom: 8px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .section-title {
@@ -186,9 +259,9 @@
 
     .tier-badge {
       font-size: 10px;
-      background: rgba(99, 102, 241, 0.15);
-      color: #a5b4fc;
-      border: 1px solid rgba(99, 102, 241, 0.4);
+      background: rgba(99, 102, 241, 0.2);
+      color: #c7d2fe;
+      border: 1px solid rgba(99, 102, 241, 0.5);
       padding: 3px 8px;
       border-radius: 99px;
       font-weight: 600;
@@ -225,6 +298,7 @@
     .color-upload-row {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 10px;
     }
 
@@ -233,7 +307,7 @@
       height: 34px;
       border: 1px solid var(--border-subtle);
       border-radius: 6px;
-      background: #090d16;
+      background: #0f172a;
       cursor: pointer;
     }
 
@@ -261,7 +335,8 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: #090d16;
+      gap: 8px;
+      background: #0f172a;
       border: 1px solid var(--border-subtle);
       padding: 9px 12px;
       border-radius: 8px;
@@ -277,26 +352,29 @@
     .delete-btn {
       background: transparent;
       border: none;
-      color: #ef4444;
+      color: #f87171;
       cursor: pointer;
       font-size: 12px;
       font-weight: 600;
       padding: 4px 8px;
+      flex-shrink: 0;
     }
 
     .inline-add-bar {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
       margin-top: 6px;
     }
 
     .inline-add-bar input {
       flex: 1;
+      min-width: 150px;
     }
 
     /* RIGHT PANE: LIVE PHONE SIMULATOR */
     .preview-pane {
-      background: #050811;
+      background: #0f172a;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -309,6 +387,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
       margin-bottom: 12px;
       font-size: 12px;
       color: var(--text-secondary);
@@ -316,7 +396,7 @@
 
     .slug-link {
       font-family: monospace;
-      background: #111827;
+      background: #1e293b;
       border: 1px solid var(--border-subtle);
       padding: 4px 10px;
       border-radius: 6px;
@@ -326,12 +406,13 @@
     }
 
     .phone-frame {
-      width: 390px;
+      width: 100%;
+      max-width: 390px;
       background: #0f172a;
-      border: 8px solid #1e293b;
+      border: 8px solid #334155;
       border-radius: 36px;
       overflow: hidden;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 25px var(--brand-glow);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 25px var(--brand-glow);
       flex-shrink: 0;
     }
 
@@ -439,6 +520,7 @@
       padding: 4px 8px;
       border-radius: 6px;
       font-weight: 600;
+      white-space: nowrap;
     }
 
     .m-wifi-grid {
@@ -519,7 +601,8 @@
     .tent-card-sheet {
       background: #ffffff;
       color: #0f172a;
-      width: 440px;
+      width: 100%;
+      max-width: 440px;
       border-radius: 16px;
       overflow: hidden;
       text-align: center;
@@ -573,6 +656,81 @@
       font-size: 13px;
     }
 
+    /* =========================================================================
+       MOBILE & TABLET RESPONSIVE LAYOUT (<= 960px)
+       ========================================================================= */
+    @media (max-width: 960px) {
+      body {
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+        padding-bottom: 76px; /* Space for floating bottom arrow button */
+      }
+
+      .divider-v {
+        display: none;
+      }
+
+      .topbar {
+        padding: 12px 14px;
+      }
+
+      .topbar-left {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .selector-group {
+        flex: 1;
+        min-width: 140px;
+      }
+
+      .selector-group select {
+        flex: 1;
+        width: 100%;
+      }
+
+      .mobile-view-bar {
+        display: flex;
+        position: sticky;
+        top: 0;
+        z-index: 80;
+      }
+
+      .mobile-floating-switch {
+        display: block;
+      }
+
+      .workspace {
+        display: block;
+        overflow: visible;
+      }
+
+      .editor-pane {
+        border-right: none;
+        padding: 14px;
+        overflow: visible;
+      }
+
+      .preview-pane {
+        padding: 16px 12px;
+        overflow: visible;
+      }
+
+      /* Toggle visibility based on mobile mode class on .workspace */
+      .workspace.mobile-mode-editor .preview-pane {
+        display: none;
+      }
+
+      .workspace.mobile-mode-preview .editor-pane {
+        display: none;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media print {
       body * { visibility: hidden; }
       #qrModal, #qrModal * { visibility: visible; }
@@ -585,10 +743,10 @@
 
   <header class="topbar">
     <div class="topbar-left">
-      <div class="pmc-brand">
+      <a href="index.html" class="pmc-brand" title="Back to Landing Page">
         <span class="pmc-dot"></span>
         <span id="pmcNameDisplay">Summit Peak Property Management</span>
-      </div>
+      </a>
       <span class="cloud-status" id="cloudStatusBadge">Connecting...</span>
       <div class="divider-v"></div>
 
@@ -610,11 +768,23 @@
     <div class="topbar-left">
       <button class="btn" id="bulkCsvBtn">Import CSV</button>
       <button class="btn btn-save" id="saveCloudBtn">💾 Save Changes</button>
-      <button class="btn btn-primary" id="openQrModalBtn">Print QR Tent Card</button>
+      <button class="btn btn-primary" id="openQrModalBtn">Print QR Card</button>
     </div>
   </header>
 
-  <main class="workspace">
+  <!-- MOBILE VIEW SWITCHER BAR (Shown on Phones & Tablets) -->
+  <nav class="mobile-view-bar">
+    <button class="view-tab-btn active" id="tabEditorBtn" onclick="setMobileView('editor')">
+      ⚙ 1. PMC Editor Dashboard
+    </button>
+    <button class="view-tab-btn" id="tabPreviewBtn" onclick="setMobileView('preview')">
+      2. Live Tenant Preview &rarr;
+    </button>
+  </nav>
+
+  <!-- MAIN WORKSPACE (Defaults to mobile-mode-editor on phones, split screen on desktop) -->
+  <main class="workspace mobile-mode-editor" id="mainWorkspace">
+
     <section class="editor-pane">
 
       <!-- SECTION 1: PROPERTY IDENTITY -->
@@ -740,7 +910,15 @@
 
       <div class="phone-frame" id="mobilePreviewFrame"></div>
     </aside>
+
   </main>
+
+  <!-- FLOATING MOBILE ACTION ARROW BUTTON -->
+  <div class="mobile-floating-switch">
+    <button class="floating-switch-btn" id="floatingToggleBtn" onclick="toggleMobileView()">
+      See Live Tenant Preview &rarr;
+    </button>
+  </div>
 
   <!-- PRINTABLE QR WELCOME TENT CARD MODAL -->
   <div class="modal-backdrop" id="qrModal">
@@ -775,21 +953,50 @@
 
   <script>
     // =========================================================================
-    // PASTE YOUR TWO SUPABASE KEYS HERE (From Project Settings -> API)
+    // SUPABASE CONFIGURATION (Your URL is pre-filled; paste your Publishable Key)
     // =========================================================================
     const SUPABASE_URL = "https://csiwbnosdxnwpdlqydkl.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_g6EY_Po3DPPMgnHsO0gdmg_hdMmw1y3";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_PUBLIC_KEY";
 
     const isCloudConfigured =
       SUPABASE_URL.startsWith("https://") &&
-      !SUPABASE_URL.includes("YOUR_SUPABASE") &&
-      SUPABASE_ANON_KEY.length > 20;
+      !SUPABASE_ANON_KEY.includes("YOUR_SUPABASE") &&
+      SUPABASE_ANON_KEY.length > 15;
 
     const supabaseClient = isCloudConfigured
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
       : null;
 
-    // Default Seed State
+    // MOBILE VIEW TOGGLE LOGIC (Editor <-> Tenant Preview)
+    let currentMobileMode = 'editor';
+
+    window.setMobileView = function(mode) {
+      currentMobileMode = mode;
+      const workspace = document.getElementById('mainWorkspace');
+      const tabEditor = document.getElementById('tabEditorBtn');
+      const tabPreview = document.getElementById('tabPreviewBtn');
+      const floatingBtn = document.getElementById('floatingToggleBtn');
+
+      if (mode === 'preview') {
+        workspace.classList.remove('mobile-mode-editor');
+        workspace.classList.add('mobile-mode-preview');
+        tabEditor.classList.remove('active');
+        tabPreview.classList.add('active');
+        floatingBtn.innerHTML = '&larr; Back to PMC Editor Dashboard';
+      } else {
+        workspace.classList.remove('mobile-mode-preview');
+        workspace.classList.add('mobile-mode-editor');
+        tabPreview.classList.remove('active');
+        tabEditor.classList.add('active');
+        floatingBtn.innerHTML = 'See Live Tenant Preview &rarr;';
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.toggleMobileView = function() {
+      setMobileView(currentMobileMode === 'editor' ? 'preview' : 'editor');
+    };
+
     let portfolioState = {
       company_id: null,
       company_name: "Summit Peak Property Management",
@@ -859,7 +1066,6 @@
       return prop.units[portfolioState.activeUnitIndex] || prop.units[0];
     }
 
-    // LOAD PORTFOLIO FROM SUPABASE OR LOCALSTORAGE
     async function loadPortfolioData() {
       if (supabaseClient) {
         statusBadge.textContent = "☁️ Supabase Connected";
@@ -905,7 +1111,7 @@
           portfolioState.activeUnitIndex = 0;
         }
       } else {
-        statusBadge.textContent = "⚡ Local Browser Mode (Paste Supabase Keys for Cloud)";
+        statusBadge.textContent = "⚡ Local Browser Mode";
         const saved = localStorage.getItem('pmc_portfolio_state');
         if (saved) {
           portfolioState = JSON.parse(saved);
@@ -914,19 +1120,16 @@
       syncEditorInputs();
     }
 
-    // SAVE CHANGES TO SUPABASE + LOCALSTORAGE
     async function savePortfolioData() {
       const saveBtn = document.getElementById('saveCloudBtn');
       saveBtn.textContent = "Saving...";
 
-      // Always mirror to localStorage for instant cross-tab testing
       localStorage.setItem('pmc_portfolio_state', JSON.stringify(portfolioState));
 
       if (supabaseClient) {
         const prop = getActiveProperty();
         const unit = getActiveUnit();
 
-        // Upsert Property
         const { data: savedProp, error: propErr } = await supabaseClient
           .from('properties')
           .upsert({
@@ -947,7 +1150,6 @@
         if (!propErr && savedProp) {
           prop.db_id = savedProp.id;
 
-          // Upsert Active Unit
           const { data: savedUnit } = await supabaseClient
             .from('units')
             .upsert({
@@ -970,7 +1172,6 @@
       setTimeout(() => { saveBtn.textContent = "💾 Save Changes"; }, 1800);
     }
 
-    // UPLOAD FILE HELPER (Uploads to Supabase `property-assets` bucket or falls back to Data URL)
     async function uploadAssetFile(file) {
       if (supabaseClient) {
         const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -984,7 +1185,6 @@
           return data.publicUrl;
         }
       }
-      // Fallback for Local Mode
       return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = (e) => resolve(e.target.result);
@@ -996,7 +1196,6 @@
       const prop = getActiveProperty();
       const unit = getActiveUnit();
 
-      // Auto-persist local copy on every edit
       localStorage.setItem('pmc_portfolio_state', JSON.stringify(portfolioState));
 
       document.documentElement.style.setProperty('--brand-accent', prop.accent_color);
@@ -1141,7 +1340,6 @@
       `;
     }
 
-    // EVENT LISTENERS
     document.getElementById('saveCloudBtn').addEventListener('click', savePortfolioData);
 
     document.getElementById('propertySelect').addEventListener('change', (e) => {
@@ -1174,7 +1372,6 @@
       renderMobilePreview();
     });
 
-    // HERO PHOTO UPLOAD TO SUPABASE BUCKET
     document.getElementById('propHeroFileInput').addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -1213,7 +1410,6 @@
       renderMobilePreview();
     });
 
-    // PDF ONBOARDING PACKET UPLOAD TO SUPABASE BUCKET
     document.getElementById('newPacketFile').addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -1343,7 +1539,6 @@
       await savePortfolioData();
     });
 
-    // PRINTABLE QR WELCOME TENT CARD GENERATOR
     document.getElementById('openQrModalBtn').addEventListener('click', () => {
       const prop = getActiveProperty();
       const unit = getActiveUnit();
